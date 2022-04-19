@@ -169,6 +169,7 @@ def save_sar_images(denoised, noisy, imagename, save_dir):
     if threshold is None: threshold = np.mean(noisy) + 3 * np.std(noisy)
 
     denoisedfilename = save_dir + "/denoised_" + imagename
+
     np.save(denoisedfilename, denoised)
     store_data_and_plot(denoised, threshold, denoisedfilename)
 

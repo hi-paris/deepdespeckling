@@ -15,7 +15,7 @@ requirements = [ ]
 test_requirements = [ ]
 
 setup(
-    author="youcef kemiche",
+    author=["youcef kemiche","pierre blanchard","emanuele dalsasso"],
     author_email='y.kemiche06@hotmail.com',
     python_requires='>=3.6',
     classifiers=[

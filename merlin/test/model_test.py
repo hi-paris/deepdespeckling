@@ -71,7 +71,6 @@ class denoiser(object):
 
         """Test MERLIN"""
 
-        #tf.compat.v1.global_variables_initializer().run()
         assert len(test_files) != 0, 'No testing data!'
 
         loaded_model = AE(12,1,torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
@@ -159,7 +158,9 @@ class denoiser(object):
             noisyimage = np.squeeze(np.sqrt(i_real_part ** 2 + i_imag_part ** 2))
             outputimage = np.sqrt(np.squeeze(output_clean_image))
 
-            imagename = test_files[idx].replace(dataset_dir+"\\", "")
+            # imagename = test_files[idx].replace(dataset_dir, "") test_image_data
+            imagename = "test_image_data.npy"
+
             print("Denoised image %s" % imagename)
 
             save_sar_images(outputimage, noisyimage, imagename, save_dir)
