@@ -7,12 +7,9 @@ import os
 import numpy as np
 import torch
 
-from Dataset import *
-from model import *
-from utils import *
-
-
-torch.manual_seed(2)
+from merlinsar.train.Dataset import *
+from merlinsar.train.model import *
+from merlinsar.train.utils import *
 
 
 def evaluate(model, loader):
@@ -41,7 +38,7 @@ def save_model(model,destination_folder):
       torch.save(model.state_dict(),destination_folder+"/model.pth")
 
 
-def fit(model,train_loader,val_loader,epochs,lr_list,eval_files,eval_set,sample_dir):
+def fit(model,train_loader,val_loader,epochs,lr_list,eval_files,eval_set,sample_dir,seed=2):
   """ Fit the model according to the given evaluation data and parameters.
 
   Parameters
@@ -116,7 +113,7 @@ def create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if 
 
   return model
 
-def denoiser_train(model,lr_list,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,patch_size=256,batch_size=12,val_batch_size=1,stride_size=128,n_data_augmentation=1):
+def fit_model(model,lr_list,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,patch_size=256,batch_size=12,val_batch_size=1,stride_size=128,n_data_augmentation=1,seed=2):
   """ Runs the denoiser algorithm for the training and evaluation dataset
 
   Parameters
@@ -129,6 +126,9 @@ def denoiser_train(model,lr_list,nb_epoch,training_set_directory,validation_set_
   history : list of both training and validation loss
 
   """
+  torch.manual_seed(seed)
+
+
   # Prepare train DataLoader
   train_data = load_train_data(training_set_directory,patch_size,batch_size,stride_size,n_data_augmentation) # range [0; 1]
   train_dataset = Dataset(train_data)
@@ -147,27 +147,3 @@ def denoiser_train(model,lr_list,nb_epoch,training_set_directory,validation_set_
   print("\n model saved at :",save_directory)
    
   return history
-
-def main():
-      
-  #################### INPUTS ##################   
-  nb_epoch=1
-
-  lr = 0.001 * np.ones([nb_epoch])
-  lr[6:20] = lr[0]/10
-  lr[20:] = lr[0]/100
-
-  training_set_directory="C:/Users/ykemiche/OneDrive - Capgemini/Desktop/fork/merlin/merlin/train/data/training"
-  validation_set_directory="C:/Users/ykemiche/OneDrive - Capgemini/Desktop/fork/merlin/merlin/train/data/test"
-  save_directory="C:/Users/ykemiche/OneDrive - Capgemini/Desktop/fork/merlin/merlin/train/saved_model"
-  sample_directory="C:/Users/ykemiche/OneDrive - Capgemini/Desktop/fork/merlin/merlin/train/data/sample"
-  from_pretrained=False
-  ###########################################
-
-  model = create_model(from_pretrained=from_pretrained)
-  denoiser_train(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory)
-
-
-
-if __name__ == '__main__':
-    main()
