@@ -28,17 +28,17 @@ To get a test function using Tensorflow's framework : https://gitlab.telecom-par
 Initialization for merlin package.
 ----------------------------------
 
-import merlin
+import merlinsar
 
 despeckle
 
-* Free software: MIT license
-* Documentation: https://merlin.readthedocs.io.
+* Free software: CECIL-B
+* Documentation: link will be provided soon.
 
 Authors
 -------
 
--Emanuele Dalsasso : POST-DOCTORAL RESEARCHER AT CNAM AND TÉLÉCOM PARIS
+-Emanuele Dalsasso : Post-doctoral researcher at CNAM and Telecom Paris
 
 -Youcef Kemiche : Hi! PARIS machine learning engineer
 
@@ -67,11 +67,3 @@ FAQ
 ---
 
 Please contact us at engineer@hi-paris.fr
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
