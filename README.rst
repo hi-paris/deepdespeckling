@@ -38,9 +38,11 @@ despeckle
 Authors
 -------
 
-Emanuele Dalsasso : POST-DOCTORAL RESEARCHER AT CNAM AND TÉLÉCOM PARIS
-Youcef Kemiche : Hi! PARIS machine learning engineer
-Pierre Blanchard : Hi! PARIS machine learning engineer
+-Emanuele Dalsasso : POST-DOCTORAL RESEARCHER AT CNAM AND TÉLÉCOM PARIS
+
+-Youcef Kemiche : Hi! PARIS machine learning engineer
+
+-Pierre Blanchard : Hi! PARIS machine learning engineer
 
 
 Features
