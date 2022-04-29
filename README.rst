@@ -1,4 +1,4 @@
-merlin-sar despeckling package
+Merlin-sar Despeckling Package
 ------------------------------
 
 Based on the work of Emanuele Dalsasso, post-doctoral researcher at CNAM and Telecom Paris. 
