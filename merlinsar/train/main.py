@@ -113,7 +113,7 @@ def create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if 
 
   return model
 
-def denoiser_train(model,lr_list,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,patch_size=256,batch_size=12,val_batch_size=1,stride_size=128,n_data_augmentation=1,seed=2):
+def fit_model(model,lr_list,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,patch_size=256,batch_size=12,val_batch_size=1,stride_size=128,n_data_augmentation=1,seed=2):
   """ Runs the denoiser algorithm for the training and evaluation dataset
 
   Parameters
