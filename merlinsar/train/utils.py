@@ -8,7 +8,7 @@ from scipy import special
 from scipy import signal
 import matplotlib.pyplot as plt
 from glob import glob
-from GenerateDataset import GenerateDataset
+from merlinsar.train.GenerateDataset import GenerateDataset
 
 basedir = '.'
 
