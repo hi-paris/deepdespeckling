@@ -7,9 +7,9 @@ import os
 import numpy as np
 import torch
 
-from deepdespeckling.merlin.train.Dataset import *
-from deepdespeckling.merlin.train.model import *
-from deepdespeckling.merlin.train.utils import *
+from merlinsar.train.Dataset import *
+from merlinsar.train.model import *
+from merlinsar.train.utils import *
 
 
 def evaluate(model, loader):
@@ -97,7 +97,7 @@ def fit(model,train_loader,val_loader,epochs,lr_list,eval_files,eval_set,clip_by
   return history
 
 
-def create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=False):
+def create_model(height=256,width=256,batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=False):
   """ Runs the denoiser algorithm for the training and evaluation dataset
 
 
@@ -105,7 +105,7 @@ def create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if 
   this_dir, this_filename = os.path.split(__file__)
   weights_path = os.path.join(this_dir, "saved_model", "model.pth")
 
-  model = Model(batch_size,val_batch_size,device)
+  model = Model(height,width,batch_size,val_batch_size,device)
   model.to(device)
   
   if from_pretrained == True:

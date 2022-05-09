@@ -1,6 +1,6 @@
 import numpy as np
 
-from deepdespeckling.merlin.train.utils import *
+from merlinsar.train.utils import *
 from scipy import special
 
 
@@ -58,15 +58,15 @@ import numpy as np
 
 class Model(torch.nn.Module):
 
-    def __init__(self,batch_size,eval_batch_size,device):
+    def __init__(self,height,width,batch_size,eval_batch_size,device):
         super().__init__()
 
         self.batch_size=batch_size
         self.eval_batch_size=eval_batch_size
         self.device=device
 
-        self.height = 256
-        self.width = 256
+        self.height = height
+        self.width = width
 
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
         self.leaky = torch.nn.LeakyReLU(0.1)
