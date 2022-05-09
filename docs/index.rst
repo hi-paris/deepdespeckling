@@ -1,4 +1,4 @@
-Welcome to merlin's documentation!
+Welcome to deepdespeckling's documentation!
 ======================================
 
 .. toctree::

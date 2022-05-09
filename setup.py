@@ -4,18 +4,17 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
-
+requirements = ['Click>=7.0', ]
 test_requirements = [ ]
 
 setup(
-    author=["youcef kemiche","pierre blanchard","emanuele dalsasso"],
+    author="emanuele dalsasso, youcef kemiche, pierre blanchard",
     author_email='y.kemiche06@hotmail.com',
     python_requires='>=3.6',
     classifiers=[
@@ -31,19 +30,19 @@ setup(
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
     entry_points={
         'console_scripts': [
-            'merlin=merlin.cli:main',
+            'deepdespeckling=deepdespeckling.cli:main',
         ],
     },
-    install_requires=requirements,
+    install_requires=["numpy","Pillow","scipy","torch","opencv-python","tqdm"],
     license="MIT license",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='merlin',
-    name='merlin',
-    packages=find_packages(include=['merlin', 'merlin.*']),
+    keywords='deepdespeckling',
+    name='deepdespeckling',
+    packages=find_packages(include=['deepdespeckling', 'deepdespeckling.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/audreyr/merlin',
+    url='https://github.com/ykemiche/deepdespeckling',
     version='0.1.0',
     zip_safe=False,
 )

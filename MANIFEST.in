@@ -5,7 +5,11 @@ include LICENSE
 include README.rst
 
 recursive-include tests *
+
+recursive-include deepdespeckling/merlin/test/saved_model *
+recursive-include deepdespeckling/merlin/train/saved_model *
+
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
-recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
+recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif *.pth
