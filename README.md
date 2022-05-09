@@ -12,6 +12,13 @@ To know more about the researcher's work : https://arxiv.org/abs/2110.13148
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<img src="icons/pypi.svg" class="center">
+<img src="icons/doc.svg" class="center">
+<img src="icons/build.svg" class="center">
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
 # Installation
 
 Install merlin by running in the command prompt :
@@ -105,4 +112,4 @@ Noisy cropped image                     |           Denoised cropped image
 
 # FAQ
 
-* Please contact us at engineer@hi-paris.fr
+* Please contact us at [engineer@hi-paris.fr](engineer@hi-paris.fr)
