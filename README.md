@@ -51,7 +51,7 @@ The package offers you 3 different methods for despeckling your SAR images: the 
 1) I have a high-resolution SAR image and I want to apply the despeckling function to the whole of it::
 
 ```python
-from merlinsar.test.spotlight import despeckle
+from deepdespeckling.merlin.test.spotlight import despeckle
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -62,7 +62,7 @@ despeckle(image_path,destination_directory,model_weights_path=model_weights_path
 
 2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates::
 ```python
-from merlinsar.test.spotlight import despeckle_from_coordinates
+from deepdespeckling.merlin.test.spotlight import despeckle_from_coordinates
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -78,7 +78,7 @@ Noisy image             |  Denoised image
 
 3) I have a high-resolution SAR image but I want to apply the despeckling function to an area I want to select with a crop::
 ```python
-from merlinsar.test.spotlight import despeckle_from_crop
+from deepdespeckling.merlin.test.spotlight import despeckle_from_crop
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
