@@ -46,12 +46,13 @@ import deepdespeckling
 
 # Use cases
 
+### Test
 The package offers you 3 different methods for despeckling your SAR images: the fullsize method, the coordinates based method and the crop method.
 
-1) I have a high-resolution SAR image and I want to apply the despeckling function to the whole of it::
+1) I have a high-resolution SAR image and I want to apply the despeckling function to the whole of it:
 
 ```python
-from merlinsar.test.spotlight import despeckle
+from deepdespeckling.merlin.test.spotlight import despeckle
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -60,9 +61,9 @@ model_weights_path="path/to/model/weights"
 despeckle(image_path,destination_directory,model_weights_path=model_weights_path)
 ```
 
-2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates::
+2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates:
 ```python
-from merlinsar.test.spotlight import despeckle_from_coordinates
+from deepdespeckling.merlin.test.spotlight import despeckle_from_coordinates
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -76,9 +77,9 @@ Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
 ![](img/coordinates/noisy_test_image_data.png)  |  ![](img/coordinates/denoised_test_image_data.png)
 
-3) I have a high-resolution SAR image but I want to apply the despeckling function to an area I want to select with a crop::
+3) I have a high-resolution SAR image but I want to apply the despeckling function to an area I want to select with a crop:
 ```python
-from merlinsar.test.spotlight import despeckle_from_crop
+from deepdespeckling.merlin.test.spotlight import despeckle_from_crop
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -99,7 +100,49 @@ Noisy cropped image                     |           Denoised cropped image
 :-----------------------------------------------------------:|:------------------------------------------:
  <img src="img/crop/noisy_test_image_data.png" width="100%"> | <img src="img/crop/denoised_test_image_data.png" width="1000%">
 
+### Train
 
+1) I want to train my own model from scratch:
+```python
+from deepdespeckling.merlin.train.train import create_model, fit_model
+nb_epoch=1
+
+lr = 0.001 * np.ones([nb_epoch])
+lr[6:20] = lr[0]/10
+lr[20:] = lr[0]/100
+seed=1
+
+training_set_directory="path/to/the/training/data"
+validation_set_directory="path/to/the/test/data"
+save_directory="path/where/to/save/results"
+sample_directory="path/to/sample/data"
+from_pretrained=True
+
+model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
+fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+
+```
+
+2I want to train a model using the pre-trained version :
+```python
+from deepdespeckling.merlin.train.train import create_model, fit_model
+from merlinsar.train.model import Model
+
+nb_epoch=1
+
+lr = 0.001 * np.ones([nb_epoch])
+lr[6:20] = lr[0]/10
+lr[20:] = lr[0]/100
+
+training_set_directory="path/to/the/training/data"
+validation_set_directory="path/to/the/test/data"
+save_directory="path/where/to/save/results"
+sample_directory="path/to/sample/data"
+from_pretrained=True
+
+model=create_model(Model,batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
+fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+```
 
 # Contribute
 
