@@ -54,5 +54,5 @@ jobs:
       run: |
         # make dist
         # pip install dist/*
-        # python setup.py develop
-        pip install -i https://test.pypi.org/simple/ deepdespeckling
+        python setup.py develop
+        # pip install -i https://test.pypi.org/simple/ deepdespeckling
