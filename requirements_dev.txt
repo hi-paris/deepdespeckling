@@ -1,3 +1,4 @@
+wheel
 cycler
 numpy
 Pillow
