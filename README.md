@@ -123,7 +123,7 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 
 ```
 
-2I want to train a model using the pre-trained version :
+2) I want to train a model using the pre-trained version :
 ```python
 from deepdespeckling.merlin.train.train import create_model, fit_model
 from merlinsar.train.model import Model
