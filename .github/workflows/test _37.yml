@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest,macos-latest]
         python: ['3.7']
     env:
       OS: ${{ matrix.os }}
@@ -52,6 +52,7 @@ jobs:
 
     - name: Build and compile
       run: |
-        make dist
+        # make dist
         # pip install dist/*
-        python setup.py develop
+        # python setup.py develop
+        pip install -i https://test.pypi.org/simple/ deepdespeckling
