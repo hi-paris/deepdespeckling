@@ -151,7 +151,7 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 
 # License
 
-* Free software: CeCILL-B
+* Free software: MIT
 
 # FAQ
 
