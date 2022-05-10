@@ -1,4 +1,4 @@
-# deepdespeckling for Synthetic Aperture Radar (SAR) images
+# deepdespeckling Synthetic Aperture Radar (SAR) images with Pytorch
 
 
 Based on the work of Emanuele Dalsasso, post-doctoral researcher at CNAM and Telecom Paris.
