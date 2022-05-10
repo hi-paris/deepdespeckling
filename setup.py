@@ -4,9 +4,6 @@
 
 from setuptools import setup, find_packages
 
-with open('README.md') as readme_file:
-    readme = readme_file.read()
-
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
@@ -35,7 +32,6 @@ setup(
     },
     install_requires=["numpy","Pillow","scipy","torch","opencv-python","tqdm"],
     license="MIT license",
-    long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='deepdespeckling',
     name='deepdespeckling',
@@ -43,6 +39,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/ykemiche/deepdespeckling',
-    version='0.1.0',
+    version='0.3.1',
     zip_safe=False,
 )
