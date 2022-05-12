@@ -24,7 +24,7 @@ To get a test function using Tensorflow's framework : https://gitlab.telecom-par
 Install merlin by running in the command prompt :
 
 ```console
-pip install -i https://test.pypi.org/simple/ deepdespeckling
+pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple deepdespeckling --no-cache-dir
 ```
 
 # Initialization for merlin package.
