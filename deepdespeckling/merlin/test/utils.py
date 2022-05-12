@@ -382,7 +382,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             cv2.destroyAllWindows()
             return
 
-
 def crop(image_png, image_data_real, image_data_imag, destination_directory, test_data):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
 
@@ -479,7 +478,7 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 print('after permutation', x_start, y_start, x_end, y_end)
 
             ## cropping is finished
-            cv2.rectangle(image, (x_start, y_start), (x, y), (255, 0, 0), 2)
+            cv2.rectangle(image, (x_start, y_start), (x_end, y_end), (255, 0, 0), 2)
             cropping = False
 
             refPoint = [(x_start, y_start), (x_end, y_end)]

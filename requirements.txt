@@ -1,0 +1,11 @@
+wheel
+cycler            
+numpy           
+opencv-python     
+Pillow         
+pip               
+scipy            
+setuptools        
+torch         
+tqdm             
+
