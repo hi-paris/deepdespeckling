@@ -1,10 +1,11 @@
 wheel
 cycler            
-numpy             
+numpy           
 opencv-python     
-Pillow            
+Pillow         
 pip               
 scipy            
 setuptools        
-torch             
+torch         
 tqdm             
+
