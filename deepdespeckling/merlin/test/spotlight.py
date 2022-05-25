@@ -2,9 +2,11 @@ import torch
 
 from deepdespeckling.merlin.test.model import *
 from deepdespeckling.merlin.test.utils import *
-from deepdespeckling.merlin.test.model_test import * 
+from deepdespeckling.merlin.test.model_test import *
 import os
 from glob import glob
+import pathlib
+from pathlib import Path
 
 import numpy as np
 from deepdespeckling.merlin.test.load_cosar import cos2mat
@@ -15,9 +17,8 @@ m = -1.429329123112601
 this_dir, this_filename = os.path.split(__file__)
 
 
-def despeckle(image_path,destination_directory,stride_size=64,
-                model_weights_path= os.path.join(this_dir, "saved_model", "model.pth"),patch_size=256):
-
+def despeckle(image_path, destination_directory, stride_size=64,
+              model_weights_path=os.path.join(this_dir, "saved_model", "model.pth"), patch_size=256):
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -31,34 +32,35 @@ def despeckle(image_path,destination_directory,stride_size=64,
 
     """
 
-    denoiser=Denoiser()
+    denoiser = Denoiser()
 
-    if not os.path.exists(destination_directory+'/processed_image'):
-        os.mkdir(destination_directory+'/processed_image')
-    
-    test_data=destination_directory+'/processed_image'
+    if not os.path.exists(destination_directory + '/processed_image'):
+        os.mkdir(destination_directory + '/processed_image')
+
+    test_data = destination_directory + '/processed_image'
 
     filelist = glob(os.path.join(test_data, "*"))
     for f in filelist:
         os.remove(f)
 
-    image_data = cos2mat(image_path) 
+    image_data = cos2mat(image_path)
 
-    np.save(test_data+'/test_image_data.npy',image_data)
+    p = Path(image_path)
+    np.save(test_data + '/' + p.stem, image_data)
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
             os.getcwd(), destination_directory, destination_directory))
-            
+
     test_files = glob((test_data + '/*.npy'))
     print(test_files)
 
-    denoiser.test(test_files,model_weights_path, save_dir=destination_directory,
-                  stride=stride_size,patch_size=patch_size)
-        
+    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
+                  stride=stride_size, patch_size=patch_size)
 
-def despeckle_from_coordinates(image_path,coordinates_dict,destination_directory,stride_size=64,
-                model_weights_path= os.path.join(this_dir, "saved_model", "model.pth"),patch_size=256):
+
+def despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, stride_size=64,
+                               model_weights_path=os.path.join(this_dir, "saved_model", "model.pth"), patch_size=256):
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -72,35 +74,35 @@ def despeckle_from_coordinates(image_path,coordinates_dict,destination_directory
 
     """
 
-    x_start=coordinates_dict["x_start"]
-    x_end=coordinates_dict["x_end"]
-    y_start=coordinates_dict["y_start"]
-    y_end=coordinates_dict["y_end"]
+    x_start = coordinates_dict["x_start"]
+    x_end = coordinates_dict["x_end"]
+    y_start = coordinates_dict["y_start"]
+    y_end = coordinates_dict["y_end"]
 
-    denoiser=Denoiser()
+    denoiser = Denoiser()
 
-    if not os.path.exists(destination_directory+'/processed_image'):
-        os.mkdir(destination_directory+'/processed_image')
-    
-    test_data=destination_directory+'/processed_image'
- 
+    if not os.path.exists(destination_directory + '/processed_image'):
+        os.mkdir(destination_directory + '/processed_image')
+
+    test_data = destination_directory + '/processed_image'
+
     filelist = glob(os.path.join(test_data, "*"))
     for f in filelist:
         os.remove(f)
 
-    image_data = cos2mat(image_path) 
+    image_data = cos2mat(image_path)
 
-    np.save(test_data+'/test_image_data.npy',image_data[x_start:x_end,y_start:y_end,:])
+    p = Path(image_path)
+    np.save(test_data + '/' + p.stem, image_data[x_start:x_end, y_start:y_end, :])
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
             os.getcwd(), destination_directory, destination_directory))
-            
+
     test_files = glob((test_data + '/*.npy'))
     print(test_files)
-    denoiser.test(test_files,model_weights_path, save_dir=destination_directory,
-                  stride=stride_size,patch_size=patch_size)
-
+    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
+                  stride=stride_size, patch_size=patch_size)
 
 
 def despeckle_from_crop(image_path, destination_directory, stride_size=64,
@@ -143,7 +145,7 @@ def despeckle_from_crop(image_path, destination_directory, stride_size=64,
     filelist = glob(os.path.join(test_data, "*"))
     for f in filelist:
         os.remove(f)
-        
+
     # FROM IMAGE PATH RETRIEVE PNG, NPY, REAL , IMAG, THRESHOLD, FILENAME
     image_png, image_data, image_data_real, image_data_imag, threshold, filename = get_info_image(image_path,
                                                                                                   destination_directory)
@@ -166,14 +168,14 @@ def despeckle_from_crop(image_path, destination_directory, stride_size=64,
     image_data_imag_cropped = image_data_imag_cropped.reshape(image_data_imag_cropped.shape[0],
                                                               image_data_imag_cropped.shape[1], 1)
 
-    np.save(test_data + '/test_image_data_cropped.npy',
+    p = Path(image_path)
+    np.save(test_data + '/' + p.stem + '_cropped',
             np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
             os.getcwd(), destination_directory, destination_directory))
-
-    test_files = glob((test_data + '/test_image_data_cropped.npy'))
-    print(test_files)
+    print('path to npy or not',test_data + '/' + p.stem + '_cropped.npy')
+    test_files = glob((test_data + '/' + p.stem + '_cropped.npy'))
     denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
