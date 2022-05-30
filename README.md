@@ -116,7 +116,7 @@ training_set_directory="path/to/the/training/data"
 validation_set_directory="path/to/the/test/data"
 save_directory="path/where/to/save/results"
 sample_directory="path/to/sample/data"
-from_pretrained=True
+from_pretrained=False
 
 model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
 fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
