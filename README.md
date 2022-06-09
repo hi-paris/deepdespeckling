@@ -88,7 +88,7 @@ fixed = True "(it will crop a 256*256 image from the position of your click)" or
 
 despeckle_from_crop(image_path, destination_directory, model_weights_path, fixed=False)
 ```
-* The cropping tool:
+* The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
 
 <p align="center">
   <img src="img/crop/crop_example.png" width="66%" class="center">
