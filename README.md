@@ -100,6 +100,10 @@ Noisy cropped image                     |           Denoised cropped image
 :-----------------------------------------------------------:|:------------------------------------------:
  <img src="img/crop/noisy_test_image_data.png" width="100%"> | <img src="img/crop/denoised_test_image_data.png" width="1000%">
 
+you can use the same features for stripmap images by importing : 
+```python
+from deepdespeckling.merlin.test.stripmap import despeckle_from_crop_sp,despeckle_sp,despeckle_from_coordinates_sp
+```
 ### Train
 
 1) I want to train my own model from scratch:
@@ -123,7 +127,7 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 
 ```
 
-2I want to train a model using the pre-trained version :
+2) I want to train a model using the pre-trained version :
 ```python
 from deepdespeckling.merlin.train.train import create_model, fit_model
 from merlinsar.train.model import Model
