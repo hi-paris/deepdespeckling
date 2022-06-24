@@ -17,8 +17,9 @@ m = -1.429329123112601
 this_dir, this_filename = os.path.split(__file__)
 
 
-def despeckle(image_path, destination_directory, stride_size=64,
+def despeckle_sp(image_path, destination_directory, stride_size=64,
               model_weights_path=os.path.join(this_dir, "saved_model", "stripmap.pth"), patch_size=256):
+              
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -59,7 +60,7 @@ def despeckle(image_path, destination_directory, stride_size=64,
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, stride_size=64,
+def despeckle_from_coordinates_sp(image_path, coordinates_dict, destination_directory, stride_size=64,
                                model_weights_path=os.path.join(this_dir, "saved_model", "stripmap.pth"), patch_size=256):
     """ Description
             ----------
@@ -105,7 +106,7 @@ def despeckle_from_coordinates(image_path, coordinates_dict, destination_directo
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_crop(image_path, destination_directory, stride_size=64,
+def despeckle_from_crop_sp(image_path, destination_directory, stride_size=64,
                         model_weights_path=os.path.join(this_dir, "saved_model", "stripmap.pth"), patch_size=256,
                         fixed=True):
     print('value ofd fixed in despeckle from crop', fixed)

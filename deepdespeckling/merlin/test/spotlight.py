@@ -17,7 +17,7 @@ m = -1.429329123112601
 this_dir, this_filename = os.path.split(__file__)
 
 
-def despeckle(image_path, destination_directory, stride_size=64,
+def despeckle_st(image_path, destination_directory, stride_size=64,
               model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
     """ Description
             ----------
@@ -59,7 +59,7 @@ def despeckle(image_path, destination_directory, stride_size=64,
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, stride_size=64,
+def despeckle_from_coordinates_st(image_path, coordinates_dict, destination_directory, stride_size=64,
                                model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
     """ Description
             ----------
@@ -105,7 +105,7 @@ def despeckle_from_coordinates(image_path, coordinates_dict, destination_directo
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_crop(image_path, destination_directory, stride_size=64,
+def despeckle_from_crop_st(image_path, destination_directory, stride_size=64,
                         model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256,
                         fixed=True):
     print('value ofd fixed in despeckle from crop', fixed)
