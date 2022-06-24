@@ -60,6 +60,9 @@ model_weights_path="path/to/model/weights"
 
 despeckle_st(image_path,destination_directory,model_weights_path=model_weights_path)
 ```
+Noisy image             |  Denoised image
+:----------------------:|:-------------------------:
+![](img/entire/noisy.png)  |  ![](img/entire/denoised.png)
 
 2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates:
 ```python
