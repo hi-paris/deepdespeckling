@@ -86,7 +86,7 @@ destination_directory="path/where/to/save/results"
 model_weights_path="path/to/model/weights"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
-despeckle_from_crop(image_path, destination_directory, model_weights_path, fixed=False)
+despeckle_from_crop_st(image_path, destination_directory, model_weights_path, fixed=False)
 ```
 * The cropping tool:
 
