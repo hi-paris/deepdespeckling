@@ -43,10 +43,15 @@ def despeckle_st(image_path, destination_directory, stride_size=64,
     for f in filelist:
         os.remove(f)
 
-    image_data = cos2mat(image_path)
 
-    p = Path(image_path)
-    np.save(test_data + '/' + p.stem, image_data)
+    # check the extension of the file
+    if Path(image_path).suffix==".npy":
+        image_data=np.load(image_path)
+    else:
+        image_data = cos2mat(image_path) 
+
+    np.save(test_data+'/test_image_data.npy',image_data)
+
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
@@ -90,10 +95,13 @@ def despeckle_from_coordinates_st(image_path, coordinates_dict, destination_dire
     for f in filelist:
         os.remove(f)
 
-    image_data = cos2mat(image_path)
+    # check the extension of the file
+    if Path(image_path).suffix==".npy":
+        image_data=np.load(image_path)
+    else:
+        image_data = cos2mat(image_path) 
 
-    p = Path(image_path)
-    np.save(test_data + '/' + p.stem, image_data[x_start:x_end, y_start:y_end, :])
+    np.save(test_data+'/test_image_data.npy',image_data[x_start:x_end,y_start:y_end,:])
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
@@ -152,10 +160,10 @@ def despeckle_from_crop_st(image_path, destination_directory, stride_size=64,
 
     # CROPPING OUR PNG AND REFLECT THE CROP ON REAL AND IMAG
     if fixed:
-        print('FIXED')
+        print('Fixed mode selected')
         crop_fixed(image_png, image_data_real, image_data_imag, destination_directory, test_data)
     else:
-        print('FREE')
+        print('Free mode selected')
         crop(image_png, image_data_real, image_data_imag, destination_directory, test_data)
 
     image_data_real_cropped = np.load(test_data + '\\image_data_real_cropped.npy')
