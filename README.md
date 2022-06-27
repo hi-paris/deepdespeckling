@@ -12,18 +12,14 @@ To know more about the researcher's work : https://arxiv.org/abs/2110.13148
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
 [![PyPI version](https://badge.fury.io/py/deepdespeckling.svg)](https://badge.fury.io/py/deepdespeckling)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg](https://opensource.org/licenses/MIT)
-<img src="icons/pypi.svg" class="center">
-<img src="icons/doc.svg" class="center">
-<img src="icons/build.svg" class="center">
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Installation
 
 Install merlin by running in the command prompt :
 
 ```console
-pip install -i https://test.pypi.org/simple/ deepdespeckling
+pip install deepdespeckling
 ```
 
 # Initialization for merlin package.
