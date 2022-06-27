@@ -3,8 +3,8 @@
 
 Based on the work of Emanuele Dalsasso, post-doctoral researcher at CNAM and Telecom Paris.
 
-Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images.
-
+Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
+ 
 The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
 
 To know more about the researcher's work : https://arxiv.org/abs/2110.13148
@@ -22,21 +22,13 @@ Install merlin by running in the command prompt :
 pip install deepdespeckling
 ```
 
-# Initialization for merlin package.
-
-```python
-import deepdespeckling
-```
-
-
-
 
 # Authors
 
 
 * [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
-* [Youcef Kemiche](https://engineeringteam.hi-paris.fr/about-us-2/) (Hi! PARIS engineer)
-* [Pierre Blanchard](https://engineeringteam.hi-paris.fr/about-us-2/) (Hi! PARIS engineer)
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS machine-learning engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! machine-learning PARIS engineer)
 
 
 # Use cases
@@ -86,7 +78,7 @@ fixed = True "(it will crop a 256*256 image from the position of your click)" or
 
 despeckle_from_crop_st(image_path, destination_directory, model_weights_path, fixed=False)
 ```
-* The cropping tool:
+* The cropping tool (use "q" to validate your selection):
 
 <p align="center">
   <img src="img/crop/crop_example.png" width="66%" class="center">
