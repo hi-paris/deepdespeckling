@@ -11,7 +11,7 @@ requirements = []
 test_requirements = [ ]
 
 setup(
-    author="emanuele dalsasso, youcef kemiche, pierre blanchard",
+    author="Emanuele Dalsasso, Youcef Kemiche, Pierre Blanchard",
     author_email='y.kemiche06@hotmail.com',
     python_requires='>=3.6',
     classifiers=[
@@ -45,6 +45,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/ykemiche/deepdespeckling',
-    version='0.3.8',
+    version='0.1.0',
     zip_safe=False,
 )

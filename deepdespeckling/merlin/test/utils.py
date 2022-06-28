@@ -7,6 +7,7 @@ import cv2
 from PIL import Image
 import numpy as np
 from numpy import asarray
+import os
 
 
 # DEFINE PARAMETERS OF SPECKLE AND NORMALIZATION FACTOR
@@ -298,7 +299,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
         elif event == cv2.EVENT_LBUTTONUP:
             # record the ending (x, y) coordinates
             x_end, y_end = x, y
-            print('before permutation', x_start, y_start, x_end, y_end)
             # case crop is done bottom right - top left : WORKS
             if x_start > x_end and y_start > y_end:
                 print('Case n2 from bottom right to top left')
@@ -310,7 +310,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
 
                 y_start = tempystart - 32
                 y_end = tempystart
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             elif x_start > x_end and y_start < y_end:
                 print('Case n3 top right to botton left')
@@ -322,7 +321,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
 
                 x_end = tempxstart
                 y_end = tempystart + 32
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             elif x_start < x_end and y_start > y_end:
                 print('Case n4 bottom left to top right')
@@ -333,13 +331,11 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                 y_start = tempystart - 32
                 x_end = tempxstart + 32
                 y_end = tempystart
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             else:
                 print('general case')
                 x_end = x_start + 32
                 y_end = y_start + 32
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             refPoint = [(x_start, y_start), (x_end, y_end)]
             print('refPoint', refPoint)
@@ -435,7 +431,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
         elif event == cv2.EVENT_LBUTTONUP:
             # record the ending (x, y) coordinates
             x_end, y_end = x, y
-            print('before permutation', x_start, y_start, x_end, y_end)
             # case crop is done bottom right - top left : WORKS
             if x_start > x_end and y_start > y_end:
                 print('Case n2 from bottom right to top left')
@@ -446,7 +441,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 tempy = y_start
                 y_start = y_end
                 y_end = tempy
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             elif x_start > x_end and y_start < y_end:
                 print('Case n3 top right to botton left')
@@ -459,7 +453,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 y_start = tempystart
                 x_end = tempxstart
                 y_end = tempyend
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             elif x_start < x_end and y_start > y_end:
                 print('Case n4 bottom left to top right')
@@ -472,10 +465,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 y_start = tempyend
                 x_end = tempxend
                 y_end = tempystart
-                print('after permutation', x_start, y_start, x_end, y_end)
-
-            else:
-                print('after permutation', x_start, y_start, x_end, y_end)
 
             ## cropping is finished
             cv2.rectangle(image, (x_start, y_start), (x_end, y_end), (255, 0, 0), 2)
@@ -539,7 +528,13 @@ def get_info_image(image_path, destination_directory):
             None
 
     """
-    image_data = cos2mat(image_path)
+    
+    filename, file_extension = os.path.splitext(image_path)
+    if file_extension==".npy":
+        image_data = np.load(image_path)
+
+    else:
+        image_data = cos2mat(image_path)
 
     # GET THE TWO PARTS
     image_data_real = image_data[:, :, 0]
