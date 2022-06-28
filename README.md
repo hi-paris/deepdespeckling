@@ -1,8 +1,5 @@
 # deepdespeckling for Synthetic Aperture Radar (SAR) images
 
-
-Based on the work of Emanuele Dalsasso, post-doctoral researcher at CNAM and Telecom Paris.
-
 Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
  
 The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
@@ -27,8 +24,8 @@ pip install deepdespeckling
 
 
 * [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
-* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS machine-learning engineer)
-* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! machine-learning PARIS engineer)
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS Machine Learning Research Engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! PARIS Engineer)
 
 
 # Use cases
@@ -101,6 +98,7 @@ from deepdespeckling.merlin.test.stripmap import despeckle_from_crop_sp,despeckl
 from deepdespeckling.merlin.train.train import create_model, fit_model
 nb_epoch=1
 
+# schedule the learning rate
 lr = 0.001 * np.ones([nb_epoch])
 lr[6:20] = lr[0]/10
 lr[20:] = lr[0]/100
@@ -124,6 +122,7 @@ from merlinsar.train.model import Model
 
 nb_epoch=1
 
+# schedule the learning rate
 lr = 0.001 * np.ones([nb_epoch])
 lr[6:20] = lr[0]/10
 lr[20:] = lr[0]/100
@@ -150,3 +149,7 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 # FAQ
 
 * Please contact us at [engineer@hi-paris.fr](engineer@hi-paris.fr)
+
+# References
+
+[1] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. As if by magic: self-supervised training of deep despeckling networks with MERLIN. IEEE Transactions on Geoscience and Remote Sensing, 2021, vol. 60, p. 1-13.
