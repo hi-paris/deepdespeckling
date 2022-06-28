@@ -152,4 +152,4 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 
 # References
 
-[1] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. As if by magic: self-supervised training of deep despeckling networks with MERLIN. IEEE Transactions on Geoscience and Remote Sensing, 2021, vol. 60, p. 1-13.
+[1] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. [As if by magic: self-supervised training of deep despeckling networks with MERLIN](https://arxiv.org/pdf/2110.13148.pdf). IEEE Transactions on Geoscience and Remote Sensing, 2021, vol. 60, p. 1-13.
