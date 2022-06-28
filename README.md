@@ -4,8 +4,6 @@ Speckle fluctuations seriously limit the interpretability of synthetic aperture 
  
 The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
 
-To know more about the researcher's work : https://arxiv.org/abs/2110.13148
-
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
 [![PyPI version](https://badge.fury.io/py/deepdespeckling.svg)](https://badge.fury.io/py/deepdespeckling)
