@@ -1,4 +1,4 @@
-# deepdespeckling for Synthetic Aperture Radar (SAR) images
+# deepdespeckling Synthetic Aperture Radar (SAR) images with Pytorch
 
 Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
  
@@ -11,12 +11,11 @@ To get a test function using Tensorflow's framework : https://gitlab.telecom-par
 
 # Installation
 
-Install merlin by running in the command prompt :
+Install deepdespeckling by running in the command prompt :
 
-```console
+```python
 pip install deepdespeckling
 ```
-
 
 # Authors
 
@@ -73,7 +72,8 @@ fixed = True "(it will crop a 256*256 image from the position of your click)" or
 
 despeckle_from_crop_st(image_path, destination_directory, model_weights_path, fixed=False)
 ```
-* The cropping tool (use "q" to validate your selection):
+
+* The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
 
 <p align="center">
   <img src="img/crop/crop_example.png" width="66%" class="center">
@@ -106,7 +106,7 @@ training_set_directory="path/to/the/training/data"
 validation_set_directory="path/to/the/test/data"
 save_directory="path/where/to/save/results"
 sample_directory="path/to/sample/data"
-from_pretrained=True
+from_pretrained=False
 
 model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
 fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
