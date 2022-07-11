@@ -17,8 +17,8 @@ m = -1.429329123112601
 this_dir, this_filename = os.path.split(__file__)
 
 
-def despeckle_st(image_path, destination_directory, stride_size=64,
-              model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
+def despeckle_spotlight(image_path, destination_directory, stride_size=64,
+                        model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -43,29 +43,28 @@ def despeckle_st(image_path, destination_directory, stride_size=64,
     for f in filelist:
         os.remove(f)
 
-
     # check the extension of the file
-    if Path(image_path).suffix==".npy":
-        image_data=np.load(image_path)
+    if Path(image_path).suffix == ".npy":
+        image_data = np.load(image_path)
     else:
-        image_data = cos2mat(image_path) 
+        image_data = cos2mat(image_path)
 
-    np.save(test_data+'/test_image_data.npy',image_data)
-
+    imagename = image_path.split('/')[-1].split('.')[0]
+    np.save(test_data + '/' + imagename +'.npy', image_data)
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
-            os.getcwd(), destination_directory, destination_directory))
+            os.getcwd(), image_path, destination_directory))
 
     test_files = glob((test_data + '/*.npy'))
-    print(test_files)
 
     denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_coordinates_st(image_path, coordinates_dict, destination_directory, stride_size=64,
-                               model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
+def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destination_directory, stride_size=64,
+                                         model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+                                         patch_size=256):
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -96,26 +95,28 @@ def despeckle_from_coordinates_st(image_path, coordinates_dict, destination_dire
         os.remove(f)
 
     # check the extension of the file
-    if Path(image_path).suffix==".npy":
-        image_data=np.load(image_path)
+    if Path(image_path).suffix == ".npy":
+        image_data = np.load(image_path)
     else:
-        image_data = cos2mat(image_path) 
+        image_data = cos2mat(image_path)
 
-    np.save(test_data+'/test_image_data.npy',image_data[x_start:x_end,y_start:y_end,:])
+    imagename = image_path.split('/')[-1].split('.')[0]
+    np.save(test_data + '/' + imagename +'.npy', image_data[x_start:x_end, y_start:y_end, :])
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
-            os.getcwd(), destination_directory, destination_directory))
+            os.getcwd(), image_path, destination_directory))
 
     test_files = glob((test_data + '/*.npy'))
-    print(test_files)
+
     denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
 
 
-def despeckle_from_crop_st(image_path, destination_directory, stride_size=64,
-                        model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256,
-                        fixed=True):
+def despeckle_from_crop_spotlight(image_path, destination_directory, stride_size=64,
+                                  model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+                                  patch_size=256,
+                                  fixed=True):
     print('value ofd fixed in despeckle from crop', fixed)
     """ The despeckling function with an integrated cropping tool made with OpenCV.
     The ideal choice if you need to despeckle only a certain area of your high-res image. Results are saved in the
@@ -182,8 +183,8 @@ def despeckle_from_crop_st(image_path, destination_directory, stride_size=64,
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
-            os.getcwd(), destination_directory, destination_directory))
-    print('path to npy or not',test_data + '/' + p.stem + '_cropped.npy')
+            os.getcwd(), image_path, destination_directory)+"\n")
+
     test_files = glob((test_data + '/' + p.stem + '_cropped.npy'))
     denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
