@@ -55,4 +55,4 @@ jobs:
         # make dist
         # pip install dist/*
         # python setup.py develop
-        pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple deepdespeckling --no-cache-dir
+        pip install deepdespeckling 

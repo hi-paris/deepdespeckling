@@ -1,47 +1,28 @@
-# deepdespeckling for Synthetic Aperture Radar (SAR) images
+# deepdespeckling Synthetic Aperture Radar (SAR) images with Pytorch
 
-
-Based on the work of Emanuele Dalsasso, post-doctoral researcher at CNAM and Telecom Paris.
-
-Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images.
-
+Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
+ 
 The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
-
-To know more about the researcher's work : https://arxiv.org/abs/2110.13148
 
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
-
+[![PyPI version](https://badge.fury.io/py/deepdespeckling.svg)](https://badge.fury.io/py/deepdespeckling)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-<img src="icons/pypi.svg" class="center">
-<img src="icons/doc.svg" class="center">
-<img src="icons/build.svg" class="center">
-
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
 # Installation
 
-Install merlin by running in the command prompt :
-
-```console
-pip install -i https://test.pypi.org/simple/ deepdespeckling
-```
-
-# Initialization for merlin package.
+Install deepdespeckling by running in the command prompt :
 
 ```python
-import deepdespeckling
+pip install deepdespeckling
 ```
-
-
-
 
 # Authors
 
 
 * [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
-* [Youcef Kemiche](https://engineeringteam.hi-paris.fr/about-us-2/) (Hi! PARIS engineer)
-* [Pierre Blanchard](https://engineeringteam.hi-paris.fr/about-us-2/) (Hi! PARIS engineer)
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS Machine Learning Research Engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! PARIS Engineer)
 
 
 # Use cases
@@ -91,7 +72,8 @@ fixed = True "(it will crop a 256*256 image from the position of your click)" or
 
 despeckle_from_crop_st(image_path, destination_directory, model_weights_path, fixed=False)
 ```
-* The cropping tool:
+
+* The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
 
 <p align="center">
   <img src="img/crop/crop_example.png" width="66%" class="center">
@@ -114,6 +96,7 @@ from deepdespeckling.merlin.test.stripmap import despeckle_from_crop_sp,despeckl
 from deepdespeckling.merlin.train.train import create_model, fit_model
 nb_epoch=1
 
+# schedule the learning rate
 lr = 0.001 * np.ones([nb_epoch])
 lr[6:20] = lr[0]/10
 lr[20:] = lr[0]/100
@@ -123,7 +106,7 @@ training_set_directory="path/to/the/training/data"
 validation_set_directory="path/to/the/test/data"
 save_directory="path/where/to/save/results"
 sample_directory="path/to/sample/data"
-from_pretrained=True
+from_pretrained=False
 
 model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
 fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
@@ -137,6 +120,7 @@ from merlinsar.train.model import Model
 
 nb_epoch=1
 
+# schedule the learning rate
 lr = 0.001 * np.ones([nb_epoch])
 lr[6:20] = lr[0]/10
 lr[20:] = lr[0]/100
@@ -163,3 +147,7 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 # FAQ
 
 * Please contact us at [engineer@hi-paris.fr](engineer@hi-paris.fr)
+
+# References
+
+[1] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. [As if by magic: self-supervised training of deep despeckling networks with MERLIN](https://arxiv.org/pdf/2110.13148.pdf). IEEE Transactions on Geoscience and Remote Sensing, 2021, vol. 60, p. 1-13.
