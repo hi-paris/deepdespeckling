@@ -163,6 +163,7 @@ def store_data_and_plot(im, threshold, filename):
     im.save(filename.replace('npy', 'png'))
     return filename
 
+
 def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
     choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
                'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
@@ -192,7 +193,7 @@ def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
     store_data_and_plot(noisy, threshold, noisyfilename)
 
 
-def save_real_imag_images(real_part, imag_part, imagename, save_dir):
+def save_real_imag_images(noisy, real_part, imag_part, imagename, save_dir):
     choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
                'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
                'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
@@ -201,7 +202,7 @@ def save_real_imag_images(real_part, imag_part, imagename, save_dir):
     for x in choices:
         if x in imagename:
             threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(imag_part) + 3 * np.std(imag_part)
+    if threshold is None: threshold = np.mean(noisy) + 3 * np.std(noisy)
 
     ####
     imagename = imagename.split('\\')[-1]
@@ -216,7 +217,7 @@ def save_real_imag_images(real_part, imag_part, imagename, save_dir):
     store_data_and_plot(imag_part, threshold, imagfilename)
 
 
-def save_real_imag_images_noisy(real_part, imag_part, imagename, save_dir):
+def save_real_imag_images_noisy(noisy, real_part, imag_part, imagename, save_dir):
     choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
                'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
                'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
@@ -225,7 +226,7 @@ def save_real_imag_images_noisy(real_part, imag_part, imagename, save_dir):
     for x in choices:
         if x in imagename:
             threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(np.abs(imag_part)) + 3 * np.std(np.abs(imag_part))
+    if threshold is None: threshold = np.mean(np.abs(noisy)) + 3 * np.std(np.abs(noisy))
 
     ####
     imagename = imagename.split('\\')[-1]
@@ -239,6 +240,7 @@ def save_real_imag_images_noisy(real_part, imag_part, imagename, save_dir):
     np.save(imagfilename, imag_part)
     store_data_and_plot(np.sqrt(2) * np.abs(imag_part), threshold, imagfilename)
 
+
 def cal_psnr(Shat, S):
     # takes amplitudes in input
     # Shat: a SAR amplitude image
@@ -246,6 +248,7 @@ def cal_psnr(Shat, S):
     P = np.quantile(S, 0.99)
     res = 10 * np.log10((P ** 2) / np.mean(np.abs(Shat - S) ** 2))
     return res
+
 
 def crop_fixed(image_png, image_data_real, image_data_imag, destination_directory, test_data):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
@@ -276,6 +279,9 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             None
 
         """
+
+    test_data = destination_directory + '\\processed_image'
+
     # HERE I READ THE PNG FILE
     oriImage = image_png.copy()
     cropping = False
@@ -301,7 +307,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             x_end, y_end = x, y
             # case crop is done bottom right - top left : WORKS
             if x_start > x_end and y_start > y_end:
-                print('Case n2 from bottom right to top left')
                 tempxstart = x_start
                 tempystart = y_start
 
@@ -312,7 +317,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                 y_end = tempystart
 
             elif x_start > x_end and y_start < y_end:
-                print('Case n3 top right to botton left')
                 tempxstart = x_start
                 tempystart = y_start
 
@@ -323,7 +327,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                 y_end = tempystart + 32
 
             elif x_start < x_end and y_start > y_end:
-                print('Case n4 bottom left to top right')
                 tempxstart = x_start
                 tempystart = y_start
 
@@ -333,12 +336,10 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                 y_end = tempystart
 
             else:
-                print('general case')
                 x_end = x_start + 32
                 y_end = y_start + 32
 
             refPoint = [(x_start, y_start), (x_end, y_end)]
-            print('refPoint', refPoint)
             ## cropping is finished
             cv2.rectangle(image, (x_start, y_start), (x_end, y_end), (255, 0, 0), 2)
             cropping = False
@@ -378,7 +379,8 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             cv2.destroyAllWindows()
             return
 
-def crop(image_png, image_data_real, image_data_imag, destination_directory, test_data):
+
+def crop(image_png, image_data_real, image_data_imag, destination_directory,test_data):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
 
             Parameters
@@ -407,6 +409,8 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
             None
 
         """
+    test_data = destination_directory + '\\processed_image'
+
     # HERE I READ THE PNG FILE
     oriImage = image_png.copy()
     cropping = False
@@ -433,7 +437,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
             x_end, y_end = x, y
             # case crop is done bottom right - top left : WORKS
             if x_start > x_end and y_start > y_end:
-                print('Case n2 from bottom right to top left')
                 tempx = x_start
                 x_start = x_end
                 x_end = tempx
@@ -443,7 +446,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 y_end = tempy
 
             elif x_start > x_end and y_start < y_end:
-                print('Case n3 top right to botton left')
                 tempxstart = x_start
                 tempystart = y_start
                 tempxend = x_end
@@ -455,7 +457,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
                 y_end = tempyend
 
             elif x_start < x_end and y_start > y_end:
-                print('Case n4 bottom left to top right')
                 tempxstart = x_start
                 tempystart = y_start
                 tempxend = x_end
@@ -528,9 +529,9 @@ def get_info_image(image_path, destination_directory):
             None
 
     """
-    
+
     filename, file_extension = os.path.splitext(image_path)
-    if file_extension==".npy":
+    if file_extension == ".npy":
         image_data = np.load(image_path)
 
     else:

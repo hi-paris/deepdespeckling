@@ -160,7 +160,7 @@ class Denoiser(object):
             print("Denoised image %s" % imagename)
 
             save_sar_images(outputimage, noisyimage, imagename, save_dir)
-            save_real_imag_images( denormalize_sar(output_clean_image_1), denormalize_sar(output_clean_image_2),
+            save_real_imag_images(noisyimage, denormalize_sar(output_clean_image_1), denormalize_sar(output_clean_image_2),
                                   imagename, save_dir)
 
-            save_real_imag_images_noisy( np.squeeze(i_real_part), np.squeeze(i_imag_part), imagename, save_dir)
+            save_real_imag_images_noisy(noisyimage, np.squeeze(i_real_part), np.squeeze(i_imag_part), imagename, save_dir)
