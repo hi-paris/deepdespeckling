@@ -1,9 +1,6 @@
 import glob
-import random
-import os
 import numpy as np
 from scipy import signal
-from scipy import special
 
 
 '''

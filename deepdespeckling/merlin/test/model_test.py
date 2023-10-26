@@ -1,13 +1,13 @@
-from deepdespeckling.merlin.test.utils import *
-from deepdespeckling.merlin.test.model import *
 import torch
 import numpy as np
 from tqdm import tqdm
-import pathlib
 from pathlib import Path
 
-M = 10.089038980848645
-m = -1.429329123112601
+from deepdespeckling.merlin.test.model import Model
+from deepdespeckling.utils.constants import M, m
+from deepdespeckling.utils.utils import (denormalize_sar_for_testing, load_sar_images, save_real_imag_images, 
+                                         save_real_imag_images_noisy, save_sar_images, symetrisation_patch_test)
+
 
 class Denoiser(object):
     """ Description
@@ -27,7 +27,7 @@ class Denoiser(object):
 
         self.input_c_dim = input_c_dim
 
-    def load(self,model,weights_path):
+    def load(self, model, weights_path):
         """ Description
                     ----------
                     Restores a checkpoint located in a checkpoint repository
@@ -48,7 +48,7 @@ class Denoiser(object):
         return model
 
 
-    def test(self,test_files, weights_path, save_dir,stride,patch_size):
+    def test(self, test_files, weights_path, save_dir, stride, patch_size):
 
 
         """ Description
@@ -147,8 +147,8 @@ class Denoiser(object):
 
             output_clean_image_1 = output_clean_image_1 / count_image
             output_clean_image_2 = output_clean_image_2 / count_image
-            output_clean_image = 0.5 * (np.square(denormalize_sar(output_clean_image_1)) + np.square(
-            denormalize_sar(output_clean_image_2))) # combine the two estimation
+            output_clean_image = 0.5 * (np.square(denormalize_sar_for_testing(output_clean_image_1)) + np.square(
+            denormalize_sar_for_testing(output_clean_image_2))) # combine the two estimation
 
 
             noisyimage = np.squeeze(np.sqrt(i_real_part ** 2 + i_imag_part ** 2))
@@ -160,7 +160,7 @@ class Denoiser(object):
             print("Denoised image %s" % imagename)
 
             save_sar_images(outputimage, noisyimage, imagename, save_dir)
-            save_real_imag_images(noisyimage, denormalize_sar(output_clean_image_1), denormalize_sar(output_clean_image_2),
+            save_real_imag_images(noisyimage, denormalize_sar_for_testing(output_clean_image_1), denormalize_sar_for_testing(output_clean_image_2),
                                   imagename, save_dir)
 
             save_real_imag_images_noisy(noisyimage, np.squeeze(i_real_part), np.squeeze(i_imag_part), imagename, save_dir)

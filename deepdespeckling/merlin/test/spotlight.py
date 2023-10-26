@@ -1,18 +1,12 @@
-import torch
-
-from deepdespeckling.merlin.test.model import *
-from deepdespeckling.merlin.test.utils import *
-from deepdespeckling.merlin.test.model_test import *
 import os
 from glob import glob
-import pathlib
 from pathlib import Path
-
 import numpy as np
-from deepdespeckling.merlin.test.load_cosar import cos2mat
 
-M = 10.089038980848645
-m = -1.429329123112601
+from deepdespeckling.merlin.test.load_cosar import cos2mat
+from deepdespeckling.merlin.test.model_test import Denoiser
+from deepdespeckling.utils.utils import crop, crop_fixed, get_info_image, store_data_and_plot
+
 
 this_dir, this_filename = os.path.split(__file__)
 
@@ -109,7 +103,7 @@ def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destinati
 
     test_files = glob((test_data + '/*.npy'))
 
-    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
+    denoiser.test_functions(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
 
 

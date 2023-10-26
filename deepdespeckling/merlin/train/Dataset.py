@@ -1,7 +1,7 @@
-import numpy as np
+from glob import glob
 import torch
-from deepdespeckling.merlin.train.utils import *
 
+from deepdespeckling.utils.utils import load_sar_images, symetrisation_patch
 
 
 class Dataset(torch.utils.data.Dataset):

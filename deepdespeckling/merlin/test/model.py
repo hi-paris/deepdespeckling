@@ -1,35 +1,15 @@
-import time
-import numpy as np
-import os
-
-from deepdespeckling.merlin.test.utils import *
-from scipy import special
-import argparse
-
-
-# DEFINE PARAMETERS OF SPECKLE AND NORMALIZATION FACTOR
-M = 10.089038980848645
-m = -1.429329123112601
-L = 1
-c = (1 / 2) * (special.psi(L) - np.log(L))
-cn = c / (M - m)  # normalized (0,1) mean of log speckle
-
 import torch
-import numpy as np
-
-
 
 
 class Model(torch.nn.Module):
 
-    def __init__(self,device):
+    def __init__(self, device):
         super().__init__()
 
-        self.device=device
+        self.device = device
 
         self.height = 256
         self.width = 256
-
 
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
         self.leaky = torch.nn.LeakyReLU(0.1)
@@ -75,7 +55,7 @@ class Model(torch.nn.Module):
         self.upscale2d = torch.nn.UpsamplingNearest2d(scale_factor=2)
 
 
-    def forward(self,x):
+    def forward(self, x):
         """  Defines a class for an autoencoder algorithm for an object (image) x
 
         An autoencoder is a specific type of feedforward neural networks where the
@@ -95,7 +75,7 @@ class Model(torch.nn.Module):
         a numpy array containing the denoised image i.e the image itself minus the noise
 
         """
-        x=torch.reshape(x, [1, 1, self.height, self.width])
+        x = torch.reshape(x, [1, 1, self.height, self.width])
         skips = [x]
 
         n = x
