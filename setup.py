@@ -8,10 +8,10 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = []
-test_requirements = [ ]
+test_requirements = []
 
 setup(
-    author="Emanuele Dalsasso, Youcef Kemiche, Pierre Blanchard",
+    author="Emanuele Dalsasso, Youcef Kemiche, Pierre Blanchard, Hadrien Mariaccia",
     author_email='y.kemiche06@hotmail.com',
     python_requires='>=3.6',
     classifiers=[
@@ -44,7 +44,7 @@ setup(
     packages=find_packages(include=['deepdespeckling', 'deepdespeckling.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/ykemiche/deepdespeckling',
-    version='0.1.0',
+    url='https://github.com/hi-paris/deepdespeckling',
+    version='0.2.0',
     zip_safe=False,
 )

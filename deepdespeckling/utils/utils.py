@@ -1,21 +1,12 @@
 import numpy as np
-from PIL import Image
-from scipy import special
-from scipy import signal
-from deepdespeckling.merlin.test.load_cosar import cos2mat
 import cv2
-from PIL import Image
-import numpy as np
-from numpy import asarray
 import os
+from PIL import Image
+from scipy import signal
 
-
-# DEFINE PARAMETERS OF SPECKLE AND NORMALIZATION FACTOR
-M = 10.089038980848645
-m = -1.429329123112601
-L = 1
-c = (1 / 2) * (special.psi(L) - np.log(L))
-cn = c / (M - m)  # normalized (0,1) mean of log speckle
+from deepdespeckling.merlin.test.load_cosar import cos2mat
+from deepdespeckling.merlin.train.GenerateDataset import GenerateDataset
+from deepdespeckling.utils.constants import M, m, L, c, cn
 
 
 def normalize_sar(im):
@@ -36,7 +27,7 @@ def normalize_sar(im):
     return ((np.log(im + np.spacing(1)) - m) * 255 / (M - m)).astype('float32')
 
 
-def denormalize_sar(im):
+def denormalize_sar_for_testing(im):
     """ Description
             ----------
             Denormalization of a numpy image
@@ -52,6 +43,60 @@ def denormalize_sar(im):
     if not isinstance(im, np.ndarray):
         raise TypeError('Please provide a .npy argument')
     return np.exp((M - m) * (np.squeeze(im)).astype('float32') + m)
+
+
+
+def symetrisation_patch(ima):
+    S = np.fft.fftshift(np.fft.fft2(ima[:,:,0]+1j*ima[:,:,1]))
+    p = np.zeros((S.shape[0])) # azimut (ncol)
+    for i in range(S.shape[0]):
+        p[i] = np.mean(np.abs(S[i,:]))
+    sp = p[::-1]
+    c = np.real(np.fft.ifft(np.fft.fft(p)*np.conjugate(np.fft.fft(sp))))
+    d1 = np.unravel_index(c.argmax(),p.shape[0])
+    d1 = d1[0]
+    shift_az_1 = int(round(-(d1-1)/2))%p.shape[0]+int(p.shape[0]/2)
+    p2_1 = np.roll(p,shift_az_1)
+    shift_az_2 = int(round(-(d1-1-p.shape[0])/2))%p.shape[0]+int(p.shape[0]/2)
+    p2_2 = np.roll(p,shift_az_2)
+    window = signal.gaussian(p.shape[0], std=0.2*p.shape[0])
+    test_1 = np.sum(window*p2_1)
+    test_2 = np.sum(window*p2_2)
+    # make sure the spectrum is symetrized and zeo-Doppler centered
+    if test_1>=test_2:
+        p2 = p2_1
+        shift_az = shift_az_1/p.shape[0]
+    else:
+        p2 = p2_2
+        shift_az = shift_az_2/p.shape[0]
+    S2 = np.roll(S,int(shift_az*p.shape[0]),axis=0)
+
+    q = np.zeros((S.shape[1])) # range (nlin)
+    for j in range(S.shape[1]):
+        q[j] = np.mean(np.abs(S[:,j]))
+    sq = q[::-1]
+    #correlation
+    cq = np.real(np.fft.ifft(np.fft.fft(q)*np.conjugate(np.fft.fft(sq))))
+    d2 = np.unravel_index(cq.argmax(),q.shape[0])
+    d2=d2[0]
+    shift_range_1 = int(round(-(d2-1)/2))%q.shape[0]+int(q.shape[0]/2)
+    q2_1 = np.roll(q,shift_range_1)
+    shift_range_2 = int(round(-(d2-1-q.shape[0])/2))%q.shape[0]+int(q.shape[0]/2)
+    q2_2 = np.roll(q,shift_range_2)
+    window_r = signal.gaussian(q.shape[0], std=0.2*q.shape[0])
+    test_1 = np.sum(window_r*q2_1)
+    test_2 = np.sum(window_r*q2_2)
+    if test_1>=test_2:
+        q2 = q2_1
+        shift_range = shift_range_1/q.shape[0]
+    else:
+        q2 = q2_2
+        shift_range = shift_range_2/q.shape[0]
+
+    Sf = np.roll(S2,int(shift_range*q.shape[0]),axis=1)
+    ima2 = np.fft.ifft2(np.fft.ifftshift(Sf))
+
+    return np.stack((np.real(ima2),np.imag(ima2)),axis=2)
 
 
 def symetrisation_patch_test(real_part, imag_part):
@@ -109,6 +154,17 @@ def symetrisation_patch_test(real_part, imag_part):
     ima2 = np.fft.ifft2(np.fft.ifftshift(Sf))
     ima2 = ima2.reshape(1, np.size(ima2, 0), np.size(ima2, 1), 1)
     return np.real(ima2), np.imag(ima2)
+
+
+def denormalize_sar_for_training(im):
+    return np.exp((np.clip(np.squeeze(im),0,1))*(M-m)+m)
+
+
+def load_train_data(filepath, patch_size, batch_size, stride_size, n_data_augmentation): #TODO: add control on training data: exit if does not exists
+    datagen = GenerateDataset()
+    imgs = datagen.generate_patches(src_dir=filepath, pat_size=patch_size, step=0,
+                             stride=stride_size, bat_size=batch_size, data_aug_times=n_data_augmentation)
+    return imgs
 
 
 def load_sar_images(filelist):
@@ -354,7 +410,7 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                 cv2.imwrite(destination_directory + '\\cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
                 cropped_img_png = Image.open(destination_directory + '\\cropped_npy_to_png.png')
-                numpy_crop = asarray(cropped_img_png)
+                numpy_crop = np.asarray(cropped_img_png)
                 np.save(destination_directory + '\\cropped.npy', numpy_crop)
                 np.save(test_data + '\\image_data_real_cropped.npy', image_data_real_cropped)
                 np.save(test_data + '\\image_data_imag_cropped.npy', image_data_imag_cropped)
@@ -485,7 +541,7 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory,test
                 cv2.imwrite(destination_directory + '\\cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
                 cropped_img_png = Image.open(destination_directory + '\\cropped_npy_to_png.png')
-                numpy_crop = asarray(cropped_img_png)
+                numpy_crop = np.asarray(cropped_img_png)
                 np.save(destination_directory + '\\cropped.npy', numpy_crop)
                 np.save(test_data + '\\image_data_real_cropped.npy', image_data_real_cropped)
                 np.save(test_data + '\\image_data_imag_cropped.npy', image_data_imag_cropped)
@@ -551,3 +607,8 @@ def get_info_image(image_path, destination_directory):
     image_png = cv2.imread(filename.replace('npy', 'png'))
     print('full picture in png has a dimension of {size}'.format(size=image_png.shape))
     return image_png, image_data, image_data_real, image_data_imag, threshold, filename
+
+
+
+if __name__ == "__main__":
+    print(M)
