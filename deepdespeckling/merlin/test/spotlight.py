@@ -103,7 +103,7 @@ def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destinati
 
     test_files = glob((test_data + '/*.npy'))
 
-    denoiser.test_functions(test_files, model_weights_path, save_dir=destination_directory,
+    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
                   stride=stride_size, patch_size=patch_size)
 
 
