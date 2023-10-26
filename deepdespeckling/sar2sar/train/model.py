@@ -112,7 +112,7 @@ class Model(torch.nn.Module):
         self.upscale2d = torch.nn.UpsamplingNearest2d(scale_factor=2)
 
 
-    def forward(self,x ,batch_size):
+    def forward(self, x ,batch_size):
         """  Defines a class for an autoencoder algorithm for an object (image) x
 
         An autoencoder is a specific type of feedforward neural networks where the
