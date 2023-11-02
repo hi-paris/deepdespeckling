@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 from scipy import special
 from scipy import signal
-from deepdespeckling.merlin.test.load_cosar import cos2mat
+from deepdespeckling.merlin.inference.load_cosar import cos2mat
 import cv2
 from PIL import Image
 import numpy as np
@@ -58,7 +58,8 @@ def symetrisation_patch_test(real_part, imag_part):
         raise TypeError('Please provide a .npy argument')
     if not isinstance(imag_part, np.ndarray):
         raise TypeError('Please provide a .npy argument')
-    S = np.fft.fftshift(np.fft.fft2(real_part[0, :, :, 0] + 1j * imag_part[0, :, :, 0]))
+    S = np.fft.fftshift(np.fft.fft2(
+        real_part[0, :, :, 0] + 1j * imag_part[0, :, :, 0]))
     p = np.zeros((S.shape[0]))  # azimut (ncol)
     for i in range(S.shape[0]):
         p[i] = np.mean(np.abs(S[i, :]))
@@ -68,7 +69,8 @@ def symetrisation_patch_test(real_part, imag_part):
     d1 = d1[0]
     shift_az_1 = int(round(-(d1 - 1) / 2)) % p.shape[0] + int(p.shape[0] / 2)
     p2_1 = np.roll(p, shift_az_1)
-    shift_az_2 = int(round(-(d1 - 1 - p.shape[0]) / 2)) % p.shape[0] + int(p.shape[0] / 2)
+    shift_az_2 = int(
+        round(-(d1 - 1 - p.shape[0]) / 2)) % p.shape[0] + int(p.shape[0] / 2)
     p2_2 = np.roll(p, shift_az_2)
     window = signal.gaussian(p.shape[0], std=0.2 * p.shape[0])
     test_1 = np.sum(window * p2_1)
@@ -90,9 +92,11 @@ def symetrisation_patch_test(real_part, imag_part):
     cq = np.real(np.fft.ifft(np.fft.fft(q) * np.conjugate(np.fft.fft(sq))))
     d2 = np.unravel_index(cq.argmax(), q.shape[0])
     d2 = d2[0]
-    shift_range_1 = int(round(-(d2 - 1) / 2)) % q.shape[0] + int(q.shape[0] / 2)
+    shift_range_1 = int(round(-(d2 - 1) / 2)
+                        ) % q.shape[0] + int(q.shape[0] / 2)
     q2_1 = np.roll(q, shift_range_1)
-    shift_range_2 = int(round(-(d2 - 1 - q.shape[0]) / 2)) % q.shape[0] + int(q.shape[0] / 2)
+    shift_range_2 = int(
+        round(-(d2 - 1 - q.shape[0]) / 2)) % q.shape[0] + int(q.shape[0] / 2)
     q2_2 = np.roll(q, shift_range_2)
     window_r = signal.gaussian(q.shape[0], std=0.2 * q.shape[0])
     test_1 = np.sum(window_r * q2_1)
@@ -162,6 +166,7 @@ def store_data_and_plot(im, threshold, filename):
     im.save(filename.replace('npy', 'png'))
     return filename
 
+
 def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
     choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
                'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
@@ -171,7 +176,8 @@ def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
     for x in choices:
         if x in imagename:
             threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(noisy) + 3 * np.std(noisy)
+    if threshold is None:
+        threshold = np.mean(noisy) + 3 * np.std(noisy)
 
     ####
     imagename = imagename.split('\\')[-1]
@@ -200,7 +206,8 @@ def save_real_imag_images(real_part, imag_part, imagename, save_dir):
     for x in choices:
         if x in imagename:
             threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(imag_part) + 3 * np.std(imag_part)
+    if threshold is None:
+        threshold = np.mean(imag_part) + 3 * np.std(imag_part)
 
     ####
     imagename = imagename.split('\\')[-1]
@@ -224,7 +231,8 @@ def save_real_imag_images_noisy(real_part, imag_part, imagename, save_dir):
     for x in choices:
         if x in imagename:
             threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(np.abs(imag_part)) + 3 * np.std(np.abs(imag_part))
+    if threshold is None:
+        threshold = np.mean(np.abs(imag_part)) + 3 * np.std(np.abs(imag_part))
 
     ####
     imagename = imagename.split('\\')[-1]
@@ -232,11 +240,14 @@ def save_real_imag_images_noisy(real_part, imag_part, imagename, save_dir):
 
     realfilename = save_dir + "/noisy_real_" + imagename
     np.save(realfilename, real_part)
-    store_data_and_plot(np.sqrt(2) * np.abs(real_part), threshold, realfilename)
+    store_data_and_plot(np.sqrt(2) * np.abs(real_part),
+                        threshold, realfilename)
 
     imagfilename = save_dir + "/noisy_imag_" + imagename
     np.save(imagfilename, imag_part)
-    store_data_and_plot(np.sqrt(2) * np.abs(imag_part), threshold, imagfilename)
+    store_data_and_plot(np.sqrt(2) * np.abs(imag_part),
+                        threshold, imagfilename)
+
 
 def cal_psnr(Shat, S):
     # takes amplitudes in input
@@ -245,6 +256,7 @@ def cal_psnr(Shat, S):
     P = np.quantile(S, 0.99)
     res = 10 * np.log10((P ** 2) / np.mean(np.abs(Shat - S) ** 2))
     return res
+
 
 def crop(image_png, image_data_real, image_data_imag, destination_directory, test_data):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
@@ -298,20 +310,26 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
 
             if len(refPoint) == 2:  # when two points were found
                 image_data_real_cropped = image_data_real[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
+                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
                 image_data_imag_cropped = image_data_imag[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
+                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
 
-                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1] * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
-                roi = cv2.resize(roi, (8 * (x_end - x_start), 8 * (y_end - y_start)))
+                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1]
+                               * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
+                roi = cv2.resize(
+                    roi, (8 * (x_end - x_start), 8 * (y_end - y_start)))
 
-                cv2.imwrite(destination_directory + '\\cropped_npy_to_png.png', roi)
+                cv2.imwrite(destination_directory +
+                            '\\cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
-                cropped_img_png = Image.open(destination_directory + '\\cropped_npy_to_png.png')
+                cropped_img_png = Image.open(
+                    destination_directory + '\\cropped_npy_to_png.png')
                 numpy_crop = asarray(cropped_img_png)
                 np.save(destination_directory + '\\cropped.npy', numpy_crop)
-                np.save(test_data + '\\image_data_real_cropped.npy', image_data_real_cropped)
-                np.save(test_data + '\\image_data_imag_cropped.npy', image_data_imag_cropped)
+                np.save(test_data + '\\image_data_real_cropped.npy',
+                        image_data_real_cropped)
+                np.save(test_data + '\\image_data_imag_cropped.npy',
+                        image_data_imag_cropped)
 
     h, w, c = image_png.shape
     # resizing image
@@ -327,7 +345,8 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory, tes
 
         elif cropping:
             cv2.imshow("image", i)
-            cv2.rectangle(i, (x_start, y_start), (x_end, y_end), (255, 0, 0), 2)
+            cv2.rectangle(i, (x_start, y_start),
+                          (x_end, y_end), (255, 0, 0), 2)
 
         key = cv2.waitKey(10)
         if key == ord('q'):
@@ -372,7 +391,8 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
 
         # Mouse is Moving
         elif event == cv2.EVENT_MOUSEMOVE:
-            cv2.rectangle(image, (x_start, y_start), (x_start + 32, y_start + 32), (255, 0, 0), 2)
+            cv2.rectangle(image, (x_start, y_start),
+                          (x_start + 32, y_start + 32), (255, 0, 0), 2)
             x_end, y_end = x, y
 
         # if the left mouse button was released
@@ -385,18 +405,23 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
 
             if len(refPoint) == 2:  # when two points were found
                 image_data_real_cropped = image_data_real[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
+                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
                 image_data_imag_cropped = image_data_imag[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
-                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1] * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
+                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
+                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1]
+                               * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
                 roi = cv2.resize(roi, (256, 256))
-                cv2.imwrite(destination_directory + '\\cropped_npy_to_png.png', roi)
+                cv2.imwrite(destination_directory +
+                            '\\cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
-                cropped_img_png = Image.open(destination_directory + '\\cropped_npy_to_png.png')
+                cropped_img_png = Image.open(
+                    destination_directory + '\\cropped_npy_to_png.png')
                 numpy_crop = asarray(cropped_img_png)
                 np.save(destination_directory + '\\cropped.npy', numpy_crop)
-                np.save(test_data + '\\image_data_real_cropped.npy', image_data_real_cropped)
-                np.save(test_data + '\\image_data_imag_cropped.npy', image_data_imag_cropped)
+                np.save(test_data + '\\image_data_real_cropped.npy',
+                        image_data_real_cropped)
+                np.save(test_data + '\\image_data_imag_cropped.npy',
+                        image_data_imag_cropped)
 
     h, w, c = image_png.shape
     # resizing image
@@ -439,12 +464,15 @@ def get_info_image(image_path, destination_directory):
     image_data_imag = image_data[:, :, 1]
 
     # GET NOISY FOR THRESHOLD
-    image = np.squeeze(np.sqrt(np.square(image_data_real) + np.square(image_data_imag)))
+    image = np.squeeze(
+        np.sqrt(np.square(image_data_real) + np.square(image_data_imag)))
     threshold = np.mean(image) + 3 * np.std(image)
 
     # DISPLAY FULL PICTURE
-    filename = store_data_and_plot(image, threshold, destination_directory + '\\image_provided.npy')
+    filename = store_data_and_plot(
+        image, threshold, destination_directory + '\\image_provided.npy')
     print('full picture in png is saved')
     image_png = cv2.imread(filename.replace('npy', 'png'))
-    print('full picture in png has a dimension of {size}'.format(size=image_png.shape))
+    print('full picture in png has a dimension of {size}'.format(
+        size=image_png.shape))
     return image_png, image_data, image_data_real, image_data_imag, threshold, filename
