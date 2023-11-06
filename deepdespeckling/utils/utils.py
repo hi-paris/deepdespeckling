@@ -404,7 +404,7 @@ def cal_psnr(Shat, S):
     return res
 
 
-def crop_fixed(image_png, image_data_real, image_data_imag, destination_directory_path, test_data):
+def crop_fixed(image_png, image_data_real, image_data_imag, destination_directory_path, processed_images_path):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
 
             Parameters
@@ -421,7 +421,7 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             destination_directory_path: string
             the path for saving results in
 
-            test_data: string
+            processed_images_path: string
             the path for saving results in
 
             cropping: bool
@@ -433,8 +433,6 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             None
 
         """
-
-    test_data = destination_directory_path + '\\processed_image'
 
     # HERE I READ THE PNG FILE
     oriImage = image_png.copy()
@@ -508,16 +506,16 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
                                * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
                 roi = cv2.resize(roi, (256, 256))
                 cv2.imwrite(destination_directory_path +
-                            '\\cropped_npy_to_png.png', roi)
+                            '/cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
                 cropped_img_png = Image.open(
-                    destination_directory_path + '\\cropped_npy_to_png.png')
+                    destination_directory_path + '/cropped_npy_to_png.png')
                 numpy_crop = np.asarray(cropped_img_png)
                 np.save(destination_directory_path +
-                        '\\cropped.npy', numpy_crop)
-                np.save(test_data + '\\image_data_real_cropped.npy',
+                        '/cropped.npy', numpy_crop)
+                np.save(processed_images_path + '/image_data_real_cropped.npy',
                         image_data_real_cropped)
-                np.save(test_data + '\\image_data_imag_cropped.npy',
+                np.save(processed_images_path + '/image_data_imag_cropped.npy',
                         image_data_imag_cropped)
 
     h, w, c = image_png.shape
@@ -541,7 +539,7 @@ def crop_fixed(image_png, image_data_real, image_data_imag, destination_director
             return
 
 
-def crop(image_png, image_data_real, image_data_imag, destination_directory_path, test_data):
+def crop(image_png, image_data_real, image_data_imag, destination_directory_path, processed_images_path):
     """ A crapping tool for despeckling only the selection of the user, made with OpenCV
 
             Parameters
@@ -558,7 +556,7 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory_path
             destination_directory_path: string
             the path for saving results in
 
-            test_data: string
+            processed_images_path: string
             the path for saving results in
 
             cropping: bool
@@ -570,7 +568,6 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory_path
             None
 
         """
-    test_data = destination_directory_path + '\\processed_image'
 
     # HERE I READ THE PNG FILE
     oriImage = image_png.copy()
@@ -647,16 +644,16 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory_path
                     roi, (8 * (x_end - x_start), 8 * (y_end - y_start)))
 
                 cv2.imwrite(destination_directory_path +
-                            '\\cropped_npy_to_png.png', roi)
+                            '/cropped_npy_to_png.png', roi)
                 cv2.imshow("Cropped", roi)
                 cropped_img_png = Image.open(
-                    destination_directory_path + '\\cropped_npy_to_png.png')
+                    destination_directory_path + '/cropped_npy_to_png.png')
                 numpy_crop = np.asarray(cropped_img_png)
                 np.save(destination_directory_path +
-                        '\\cropped.npy', numpy_crop)
-                np.save(test_data + '\\image_data_real_cropped.npy',
+                        '/cropped.npy', numpy_crop)
+                np.save(processed_images_path + '/image_data_real_cropped.npy',
                         image_data_real_cropped)
-                np.save(test_data + '\\image_data_imag_cropped.npy',
+                np.save(processed_images_path + '/image_data_imag_cropped.npy',
                         image_data_imag_cropped)
 
     h, w, c = image_png.shape
@@ -713,7 +710,7 @@ def get_info_image(image_path, destination_directory_path):
 
     # DISPLAY FULL PICTURE
     filename = store_data_and_plot(
-        image, threshold, destination_directory_path + '\\image_provided.npy')
+        image, threshold, destination_directory_path + '/image_provided.npy')
     print('full picture in png is saved')
     image_png = cv2.imread(filename.replace('npy', 'png'))
     print('full picture in png has a dimension of {size}'.format(

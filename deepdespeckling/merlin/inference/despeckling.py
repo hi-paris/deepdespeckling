@@ -75,7 +75,7 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
     processed_images_paths = glob((processed_images_path + '/*.npy'))
 
     denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                             stride=stride_size, patch_size=patch_size)
+                                               stride=stride_size, patch_size=patch_size)
 
     return denoised_image
 
@@ -115,36 +115,36 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size
         if fixed:
             print('Fixed mode selected')
             crop_fixed(image_png, image_data_real, image_data_imag,
-                    destination_directory_path, processed_images_path)
+                       destination_directory_path, processed_images_path)
         else:
             print('Free mode selected')
             crop(image_png, image_data_real, image_data_imag,
-                destination_directory_path, processed_images_path)
+                 destination_directory_path, processed_images_path)
 
         image_data_real_cropped = np.load(
-            processed_images_path + '\\image_data_real_cropped.npy')
+            processed_images_path + '/image_data_real_cropped.npy')
         store_data_and_plot(image_data_real_cropped, threshold,
-                            processed_images_path + '\\image_data_real_cropped.npy')
+                            processed_images_path + '/image_data_real_cropped.npy')
         image_data_imag_cropped = np.load(
-            processed_images_path + '\\image_data_imag_cropped.npy')
+            processed_images_path + '/image_data_imag_cropped.npy')
         store_data_and_plot(image_data_imag_cropped, threshold,
-                            processed_images_path + '\\image_data_imag_cropped.npy')
+                            processed_images_path + '/image_data_imag_cropped.npy')
 
         image_data_real_cropped = image_data_real_cropped.reshape(image_data_real_cropped.shape[0],
-                                                                image_data_real_cropped.shape[1], 1)
+                                                                  image_data_real_cropped.shape[1], 1)
         image_data_imag_cropped = image_data_imag_cropped.reshape(image_data_imag_cropped.shape[0],
-                                                                image_data_imag_cropped.shape[1], 1)
+                                                                  image_data_imag_cropped.shape[1], 1)
 
         p = Path(image_path)
-        np.save(processed_images_path + '/' + p.stem + '_cropped',
+        np.save(processed_images_path + '/' + p.stem + '_cropped_to_denoise',
                 np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
 
     processed_cropped_images_paths = glob(
-        (processed_images_path + '/*_cropped.npy'))
+        (processed_images_path + '/*_cropped_to_denoise.npy'))
 
     logging.info(
         f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
     denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_cropped_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                             tride=stride_size, patch_size=patch_size)
+                                               stride=stride_size, patch_size=patch_size)
 
     return denoised_image
