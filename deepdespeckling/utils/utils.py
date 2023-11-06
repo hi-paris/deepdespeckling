@@ -108,7 +108,6 @@ def preprocess_and_store_sar_images(sar_images_path, processed_images_path):
     """
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
-    print(images_paths)
     for image_path in images_paths:
         image = load_sar_image(image_path)
         imagename = image_path.split('/')[-1].split('.')[0]
@@ -128,7 +127,8 @@ def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_
     y_start = coordinates_dict["y_start"]
     y_end = coordinates_dict["y_end"]
 
-    images_paths = glob(os.path.join(sar_images_path, "*"))
+    images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
+        glob(os.path.join(sar_images_path, "*.npy"))
     for image_path in images_paths:
         image = load_sar_image(image_path)
         imagename = image_path.split('/')[-1].split('.')[0]
