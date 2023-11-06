@@ -74,7 +74,7 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
 
     processed_images_paths = glob((processed_images_path + '/*.npy'))
 
-    denoised_image = Denoiser.denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
+    denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
                                              stride=stride_size, patch_size=patch_size)
 
     return denoised_image
@@ -104,44 +104,47 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size
     processed_images_path = create_empty_folder_in_directory(destination_directory_path=destination_directory_path,
                                                              folder_name="processed_images")
 
-    # FROM IMAGE PATH RETRIEVE PNG, NPY, REAL , IMAG, THRESHOLD, FILENAME
-    image_png, image_data_real, image_data_imag, threshold = get_info_image(
-        sar_images_path, destination_directory_path)
+    images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
+        glob(os.path.join(sar_images_path, "*.npy"))
+    for image_path in images_paths:
+        # FROM IMAGE PATH RETRIEVE PNG, NPY, REAL , IMAG, THRESHOLD, FILENAME
+        image_png, image_data_real, image_data_imag, threshold = get_info_image(
+            image_path, destination_directory_path)
 
-    # CROPPING OUR PNG AND REFLECT THE CROP ON REAL AND IMAG
-    if fixed:
-        print('Fixed mode selected')
-        crop_fixed(image_png, image_data_real, image_data_imag,
-                   destination_directory_path, processed_images_path)
-    else:
-        print('Free mode selected')
-        crop(image_png, image_data_real, image_data_imag,
-             destination_directory_path, processed_images_path)
+        # CROPPING OUR PNG AND REFLECT THE CROP ON REAL AND IMAG
+        if fixed:
+            print('Fixed mode selected')
+            crop_fixed(image_png, image_data_real, image_data_imag,
+                    destination_directory_path, processed_images_path)
+        else:
+            print('Free mode selected')
+            crop(image_png, image_data_real, image_data_imag,
+                destination_directory_path, processed_images_path)
 
-    image_data_real_cropped = np.load(
-        processed_images_path + '\\image_data_real_cropped.npy')
-    store_data_and_plot(image_data_real_cropped, threshold,
-                        processed_images_path + '\\image_data_real_cropped.npy')
-    image_data_imag_cropped = np.load(
-        processed_images_path + '\\image_data_imag_cropped.npy')
-    store_data_and_plot(image_data_imag_cropped, threshold,
-                        processed_images_path + '\\image_data_imag_cropped.npy')
+        image_data_real_cropped = np.load(
+            processed_images_path + '\\image_data_real_cropped.npy')
+        store_data_and_plot(image_data_real_cropped, threshold,
+                            processed_images_path + '\\image_data_real_cropped.npy')
+        image_data_imag_cropped = np.load(
+            processed_images_path + '\\image_data_imag_cropped.npy')
+        store_data_and_plot(image_data_imag_cropped, threshold,
+                            processed_images_path + '\\image_data_imag_cropped.npy')
 
-    image_data_real_cropped = image_data_real_cropped.reshape(image_data_real_cropped.shape[0],
-                                                              image_data_real_cropped.shape[1], 1)
-    image_data_imag_cropped = image_data_imag_cropped.reshape(image_data_imag_cropped.shape[0],
-                                                              image_data_imag_cropped.shape[1], 1)
+        image_data_real_cropped = image_data_real_cropped.reshape(image_data_real_cropped.shape[0],
+                                                                image_data_real_cropped.shape[1], 1)
+        image_data_imag_cropped = image_data_imag_cropped.reshape(image_data_imag_cropped.shape[0],
+                                                                image_data_imag_cropped.shape[1], 1)
 
-    p = Path(sar_images_path)
-    np.save(processed_images_path + '/' + p.stem + '_cropped',
-            np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
+        p = Path(image_path)
+        np.save(processed_images_path + '/' + p.stem + '_cropped',
+                np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
 
-    processed_images_paths = glob(
-        (processed_images_path + '/' + p.stem + '_cropped.npy'))
+    processed_cropped_images_paths = glob(
+        (processed_images_path + '/*_cropped.npy'))
 
     logging.info(
         f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
-    denoised_image = Denoiser.denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
+    denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_cropped_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
                                              tride=stride_size, patch_size=patch_size)
 
     return denoised_image
