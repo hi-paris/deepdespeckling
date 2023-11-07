@@ -54,7 +54,6 @@ class Model(torch.nn.Module):
 
         self.upscale2d = torch.nn.UpsamplingNearest2d(scale_factor=2)
 
-
     def forward(self, x):
         """  Defines a class for an autoencoder algorithm for an object (image) x
 
@@ -101,7 +100,6 @@ class Model(torch.nn.Module):
         n = self.leaky(self.enc5(n))
         n = self.pool(n)
         n = self.leaky(self.enc6(n))
-
 
         # DECODER
         n = self.upscale2d(n)

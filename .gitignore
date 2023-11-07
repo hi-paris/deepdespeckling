@@ -104,3 +104,6 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
+.DS_Store
+img/.DS_Store
+img/entire/.DS_Store

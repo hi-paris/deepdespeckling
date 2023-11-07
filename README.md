@@ -23,6 +23,7 @@ pip install deepdespeckling
 * [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
 * [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS Machine Learning Research Engineer)
 * [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! PARIS Engineer)
+* [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Machine Learning Research Engineer)
 
 
 # Use cases
@@ -33,7 +34,7 @@ The package offers you 3 different methods for despeckling your SAR images: the 
 1) I have a high-resolution SAR image and I want to apply the despeckling function to the whole of it:
 
 ```python
-from deepdespeckling.merlin.test.spotlight import despeckle_spotlight
+from deepdespeckling.merlin.inference.despeckling import despeckle
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -47,7 +48,7 @@ Noisy image             |  Denoised image
 
 2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates:
 ```python
-from deepdespeckling.merlin.test.spotlight import despeckle_from_coordinates_spotlight
+from deepdespeckling.merlin.inference.despeckling import despeckle_from_coordinates
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -63,7 +64,7 @@ Noisy image             |  Denoised image
 
 3) I have a high-resolution SAR image but I want to apply the despeckling function to an area I want to select with a crop:
 ```python
-from deepdespeckling.merlin.test.spotlight import despeckle_from_crop_spotlight
+from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
 
 image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
@@ -85,15 +86,12 @@ Noisy cropped image                     |           Denoised cropped image
 :-----------------------------------------------------------:|:------------------------------------------:
  <img src="img/crop/noisy_test_image_data.png" width="100%"> | <img src="img/crop/denoised_test_image_data.png" width="1000%">
 
-you can use the same features for stripmap images by importing : 
-```python
-from deepdespeckling.merlin.test.stripmap import despeckle_from_crop_stripmap,despeckle_stripmap,despeckle_from_coordinates_stripmap
-```
+you can use the same features for stripmap images by changing the weights_path 
 ### Train
 
 1) I want to train my own model from scratch:
 ```python
-from deepdespeckling.merlin.train import create_model, fit_model
+from deepdespeckling.merlin.training.train import create_model, fit_model
 nb_epoch=1
 
 # schedule the learning rate
@@ -115,8 +113,8 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 
 2) I want to train a model using the pre-trained version :
 ```python
-from deepdespeckling.merlin.train import create_model, fit_model
-from merlinsar.train.model import Model
+from deepdespeckling.merlin.training.train import create_model, fit_model
+from deepdespeckling.merlin.training.model import Model
 
 nb_epoch=1
 
@@ -136,7 +134,6 @@ fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,samp
 ```
 
 # Contribute
-
 
 - Source Code: https://github.com/hi-paris/deepdespeckling.git
 
