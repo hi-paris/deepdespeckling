@@ -1,9 +1,9 @@
 # deepdespeckling 
 ## Synthetic Aperture Radar (SAR) images despeckling with Pytorch
 
-Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
+Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that are leveraging deep learning to highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
  
-The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
+The package contains both inference and training parts, wether you wish to despeckle a set of SAR images or use our model to build or improve your own.
 
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
