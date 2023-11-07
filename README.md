@@ -40,7 +40,7 @@ image_path="path/to/cosar/image"
 destination_directory="path/where/to/save/results"
 model_weights_path="path/to/model/weights"
 
-despeckle_spotlight(image_path,destination_directory,model_weights_path=model_weights_path)
+despeckle(image_path, destination_directory, model_weights_path=model_weights_path)
 ```
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
@@ -55,7 +55,7 @@ destination_directory="path/where/to/save/results"
 model_weights_path="path/to/model/weights"
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
-despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destination_directory, model_weights_path)
+despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_weights_path)
 ````
 
 Noisy image             |  Denoised image
@@ -71,7 +71,7 @@ destination_directory="path/where/to/save/results"
 model_weights_path="path/to/model/weights"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
-despeckle_from_crop_spotlight(image_path, destination_directory, model_weights_path, fixed=False)
+despeckle_from_crop(image_path, destination_directory, model_weights_path, fixed=False)
 ```
 
 * The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
@@ -107,7 +107,7 @@ sample_directory="path/to/sample/data"
 from_pretrained=False
 
 model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
 
 ```
 
@@ -129,8 +129,8 @@ save_directory="path/where/to/save/results"
 sample_directory="path/to/sample/data"
 from_pretrained=True
 
-model=create_model(Model,batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+model=create_model(Model, batch_size=12, val_batch_size=1, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), from_pretrained=from_pretrained)
+fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
 ```
 
 # Contribute
