@@ -40,7 +40,7 @@ def despeckle(sar_images_path, destination_directory_path, stride_size=64, model
     logging.info(
         f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
     denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size, patch_size=patch_size)
+                                               stride=stride_size)
 
     return denoised_image
 
@@ -75,7 +75,7 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
     processed_images_paths = glob((processed_images_path + '/*.npy'))
 
     denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size, patch_size=patch_size)
+                                               stride=stride_size)
 
     return denoised_image
 
@@ -145,6 +145,6 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size
     logging.info(
         f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
     denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_cropped_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size, patch_size=patch_size)
+                                               stride=stride_size)
 
     return denoised_image

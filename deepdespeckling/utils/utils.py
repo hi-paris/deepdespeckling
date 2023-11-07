@@ -136,6 +136,48 @@ def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_
                 '.npy', image[x_start:x_end, y_start:y_end, :])
 
 
+def get_maximum_patch_size(kernel_size, patch_bound):
+    """Get maximum manifold of a number lower than a bound
+
+    Args:
+        kernel_size (int): the kernel size of the trained model
+        patch_bound (int): the maximum bound of the kernel size
+
+    Returns:
+        maximum_patch_size (int) : the maximum patch size
+    """
+    k = 1
+
+    while kernel_size * k < patch_bound:
+        k = k + 1
+
+    maximum_patch_size = kernel_size * (k-1)
+
+    return maximum_patch_size
+
+
+def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
+    """Get the maximum patch size from the width and heigth and the kernel size of the model we use
+
+    Args:
+        kernel_size (int): the kernel size of the trained model
+        height (int): the heigth of the image
+        width (int): the width of the image
+
+    Returns:
+        maximum_patch_size (int) : the maximum patch size to use for despeckling
+    """
+    patch_bound = min(height, width)
+
+    if patch_bound <= kernel_size:
+        maximum_patch_size = kernel_size
+    else:
+        maximum_patch_size = get_maximum_patch_size(
+            kernel_size=kernel_size, patch_bound=patch_bound)
+
+    return maximum_patch_size
+
+
 def symetrisation_patch(ima):
     S = np.fft.fftshift(np.fft.fft2(ima[:, :, 0]+1j*ima[:, :, 1]))
     p = np.zeros((S.shape[0]))  # azimut (ncol)

@@ -3,13 +3,13 @@ import torch
 
 class Model(torch.nn.Module):
 
-    def __init__(self, device):
+    def __init__(self, device, height, width):
         super().__init__()
 
         self.device = device
 
-        self.height = 256
-        self.width = 256
+        self.height = height
+        self.width = width
 
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
         self.leaky = torch.nn.LeakyReLU(0.1)

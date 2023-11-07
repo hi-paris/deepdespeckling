@@ -5,7 +5,7 @@ from pathlib import Path
 
 from deepdespeckling.merlin.inference.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_for_testing, load_sar_images, save_real_imag_images,
+from deepdespeckling.utils.utils import (denormalize_sar_for_testing, get_maximum_patch_size_from_image_dimensions, load_sar_images, save_real_imag_images,
                                          save_real_imag_images_noisy, save_sar_images, symetrisation_patch_test)
 
 
@@ -74,7 +74,7 @@ class Denoiser(object):
 
         return real_to_denoise, imag_to_denoise
 
-    def denoise_image(self, image_path, weights_path, save_dir, stride, patch_size):
+    def denoise_image(self, image_path, weights_path, save_dir, stride):
         """Denoise a coSAR image and store the results in a given directory
 
         Args:
@@ -82,17 +82,10 @@ class Denoiser(object):
             weights_path (str): path to the pth model file
             save_dir (str): path to the directory where the results will be store
             stride (int): stride of the convolution
-            patch_size (int): size of convolution kernel 
 
         Returns:
             output_image (numpy array): denoised image
         """
-
-        loaded_model = Model(torch.device(
-            "cuda:0" if torch.cuda.is_available() else "cpu"))
-        loaded_model.load_state_dict(torch.load(
-            weights_path, map_location=torch.device('cpu')))
-
         real_image = load_sar_images(image_path).astype(np.float32)
         i_real_part = (real_image[:, :, :, 0]).reshape(real_image.shape[0], real_image.shape[1],
                                                        real_image.shape[2], 1)
@@ -102,6 +95,15 @@ class Denoiser(object):
         # Pad the image
         im_h = np.size(real_image, 1)
         im_w = np.size(real_image, 2)
+
+        patch_size = get_maximum_patch_size_from_image_dimensions(
+            kernel_size=256, height=im_h, width=im_w)
+        print(f"The model uses a patch size of {patch_size}")
+
+        loaded_model = Model(torch.device(
+            "cuda:0" if torch.cuda.is_available() else "cpu"), height=patch_size, width=patch_size)
+        loaded_model.load_state_dict(torch.load(
+            weights_path, map_location=torch.device('cpu')))
 
         count_image = np.zeros(i_real_part.shape)
         output_clean_image_1 = np.zeros(i_real_part.shape)
@@ -166,7 +168,7 @@ class Denoiser(object):
 
         return output_image
 
-    def denoise_images(self, images_to_denoise_paths, weights_path, save_dir, stride, patch_size):
+    def denoise_images(self, images_to_denoise_paths, weights_path, save_dir, stride):
         """Iterate over a directory of coSAR images and store the denoised images in a directory
 
         Args:
@@ -186,6 +188,6 @@ class Denoiser(object):
 
         for idx in range(len(images_to_denoise_paths)):
             idx_image = self.denoise_image(
-                images_to_denoise_paths[idx], weights_path, save_dir, stride, patch_size)
+                images_to_denoise_paths[idx], weights_path, save_dir, stride)
 
         return idx_image
