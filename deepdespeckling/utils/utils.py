@@ -92,10 +92,6 @@ def create_empty_folder_in_directory(destination_directory_path, folder_name="pr
     processed_images_path = destination_directory_path + f'/{folder_name}'
     if not os.path.exists(processed_images_path):
         os.mkdir(processed_images_path)
-    else:
-        filelist = glob(os.path.join(processed_images_path, "*"))
-        for f in filelist:
-            os.remove(f)
     return processed_images_path
 
 
@@ -109,9 +105,10 @@ def preprocess_and_store_sar_images(sar_images_path, processed_images_path):
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
     for image_path in images_paths:
-        image = load_sar_image(image_path)
-        imagename = image_path.split('/')[-1].split('.')[0]
-        np.save(processed_images_path + '/' + imagename + '.npy', image)
+        if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
+            image = load_sar_image(image_path)
+            imagename = image_path.split('/')[-1].split('.')[0]
+            np.save(processed_images_path + '/' + imagename + '.npy', image)
 
 
 def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_images_path, coordinates_dict):
@@ -130,10 +127,11 @@ def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
     for image_path in images_paths:
-        image = load_sar_image(image_path)
-        imagename = image_path.split('/')[-1].split('.')[0]
-        np.save(processed_images_path + '/' + imagename +
-                '.npy', image[x_start:x_end, y_start:y_end, :])
+        if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
+            image = load_sar_image(image_path)
+            imagename = image_path.split('/')[-1].split('.')[0]
+            np.save(processed_images_path + '/' + imagename +
+                    '.npy', image[x_start:x_end, y_start:y_end, :])
 
 
 def get_maximum_patch_size(kernel_size, patch_bound):
