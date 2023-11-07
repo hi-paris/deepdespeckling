@@ -40,7 +40,7 @@ from deepdespeckling.merlin.inference.despeckling import despeckle
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights of the model (pth file)
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 
 denoised_image = despeckle(image_path, destination_directory, model_weights_path=model_weights_path)
@@ -58,7 +58,7 @@ from deepdespeckling.merlin.inference.despeckling import despeckle_from_coordina
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights of the model (pth file)
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
@@ -78,7 +78,7 @@ from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights of the model (pth file)
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
