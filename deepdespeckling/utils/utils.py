@@ -8,7 +8,7 @@ from glob import glob
 
 from deepdespeckling.merlin.inference.load_cosar import cos2mat
 from deepdespeckling.merlin.training.GenerateDataset import GenerateDataset
-from deepdespeckling.utils.constants import M, m, L, c, cn
+from deepdespeckling.utils.constants import M, m
 
 
 def normalize_sar(im):
@@ -105,9 +105,9 @@ def preprocess_and_store_sar_images(sar_images_path, processed_images_path):
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
     for image_path in images_paths:
+        imagename = image_path.split('/')[-1].split('.')[0]
         if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
             image = load_sar_image(image_path)
-            imagename = image_path.split('/')[-1].split('.')[0]
             np.save(processed_images_path + '/' + imagename + '.npy', image)
 
 
@@ -127,9 +127,9 @@ def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
     for image_path in images_paths:
+        imagename = image_path.split('/')[-1].split('.')[0]
         if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
             image = load_sar_image(image_path)
-            imagename = image_path.split('/')[-1].split('.')[0]
             np.save(processed_images_path + '/' + imagename +
                     '.npy', image[x_start:x_end, y_start:y_end, :])
 
@@ -147,11 +147,11 @@ def get_maximum_patch_size(kernel_size, patch_bound):
     k = 1
 
     while kernel_size * k < patch_bound:
-        k = k + 1
+        k = k * 2
 
-    maximum_patch_size = kernel_size * (k-1)
+    maximum_patch_size = int(kernel_size * (k/2))
 
-    return maximum_patch_size
+    return 256
 
 
 def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
