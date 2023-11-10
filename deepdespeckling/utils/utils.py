@@ -11,54 +11,21 @@ from deepdespeckling.merlin.training.GenerateDataset import GenerateDataset
 from deepdespeckling.utils.constants import M, m
 
 
-def normalize_sar(im):
-    """ Description
-            ----------
-            Normalization of a numpy-stored image
-
-            Parameters
-            ----------
-            im : an image object
-
-            Returns
-            ----------
-            numpy array : the image normalized
-
-        """
-    if not isinstance(im, np.ndarray):
-        raise TypeError('Please provide a .npy argument')
-    return ((np.log(im + np.spacing(1)) - m) * 255 / (M - m)).astype('float32')
-
-
-def denormalize_sar_for_testing(im):
-    """ Description
-            ----------
-            Denormalization of a numpy image
-
-            Parameters
-            ----------
-            im : an image object
-
-            Returns
-            ----------
-            numpy array : the image denormalized
-
-        """
-    if not isinstance(im, np.ndarray):
-        raise TypeError('Please provide a .npy argument')
-    return np.exp((M - m) * (np.squeeze(im)).astype('float32') + m)
-
-
-def denormalize_sar_for_training(im):
-    """Denormalization of a numpy image for merlin training
+def denormalize_sar_image(image):
+    """Denormalize a sar image store i  a numpy array
 
     Args:
-        im (numpy array): a cosar image
+        image (numpy array): a sar image
+
+    Raises:
+        TypeError: raise an error if the image file is not a numpy array
 
     Returns:
-        numpy array : the image denormalized
+        (numpy array): the image denormalized
     """
-    return np.exp((np.clip(np.squeeze(im), 0, 1))*(M-m)+m)
+    if not isinstance(image, np.ndarray):
+        raise TypeError('Please provide a numpy array')
+    return np.exp((M - m) * (np.squeeze(image)).astype('float32') + m)
 
 
 def load_sar_image(image_path):
@@ -77,6 +44,35 @@ def load_sar_image(image_path):
     else:
         raise ValueError("the image should be a cos or a npy file")
     return image
+
+
+def load_sar_images(file_list):
+    """ Description
+            ----------
+            Loads files , resize them and append them into a list called data
+
+            Parameters
+            ----------
+            filelist : a path to a folder containing the images
+
+            Returns
+            ----------
+            A list of images
+
+        """
+    if not isinstance(file_list, list):
+        image = np.load(file_list)
+        print(image.shape)
+        image = np.array(image).reshape(
+            1, np.size(image, 0), np.size(image, 1), 2)
+        print(image.shape)
+        return image
+    data = []
+    for file in file_list:
+        image = np.load(file)
+        data.append(np.array(image).reshape(
+            1, np.size(image, 0), np.size(image, 1), 2))
+    return data
 
 
 def create_empty_folder_in_directory(destination_directory_path, folder_name="processed_images"):
@@ -151,7 +147,7 @@ def get_maximum_patch_size(kernel_size, patch_bound):
 
     maximum_patch_size = int(kernel_size * (k/2))
 
-    return 256
+    return maximum_patch_size
 
 
 def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
@@ -176,66 +172,16 @@ def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
     return maximum_patch_size
 
 
-def symetrisation_patch(ima):
-    S = np.fft.fftshift(np.fft.fft2(ima[:, :, 0]+1j*ima[:, :, 1]))
-    p = np.zeros((S.shape[0]))  # azimut (ncol)
-    for i in range(S.shape[0]):
-        p[i] = np.mean(np.abs(S[i, :]))
-    sp = p[::-1]
-    c = np.real(np.fft.ifft(np.fft.fft(p)*np.conjugate(np.fft.fft(sp))))
-    d1 = np.unravel_index(c.argmax(), p.shape[0])
-    d1 = d1[0]
-    shift_az_1 = int(round(-(d1-1)/2)) % p.shape[0]+int(p.shape[0]/2)
-    p2_1 = np.roll(p, shift_az_1)
-    shift_az_2 = int(
-        round(-(d1-1-p.shape[0])/2)) % p.shape[0]+int(p.shape[0]/2)
-    p2_2 = np.roll(p, shift_az_2)
-    window = signal.gaussian(p.shape[0], std=0.2*p.shape[0])
-    test_1 = np.sum(window*p2_1)
-    test_2 = np.sum(window*p2_2)
-    # make sure the spectrum is symetrized and zeo-Doppler centered
-    if test_1 >= test_2:
-        p2 = p2_1
-        shift_az = shift_az_1/p.shape[0]
-    else:
-        p2 = p2_2
-        shift_az = shift_az_2/p.shape[0]
-    S2 = np.roll(S, int(shift_az*p.shape[0]), axis=0)
+def symetrise_real_and_imaginary_parts(real_part, imag_part):
+    """Symetrise given real and imaginary parts to ensure MERLIN properties
 
-    q = np.zeros((S.shape[1]))  # range (nlin)
-    for j in range(S.shape[1]):
-        q[j] = np.mean(np.abs(S[:, j]))
-    sq = q[::-1]
-    # correlation
-    cq = np.real(np.fft.ifft(np.fft.fft(q)*np.conjugate(np.fft.fft(sq))))
-    d2 = np.unravel_index(cq.argmax(), q.shape[0])
-    d2 = d2[0]
-    shift_range_1 = int(round(-(d2-1)/2)) % q.shape[0]+int(q.shape[0]/2)
-    q2_1 = np.roll(q, shift_range_1)
-    shift_range_2 = int(
-        round(-(d2-1-q.shape[0])/2)) % q.shape[0]+int(q.shape[0]/2)
-    q2_2 = np.roll(q, shift_range_2)
-    window_r = signal.gaussian(q.shape[0], std=0.2*q.shape[0])
-    test_1 = np.sum(window_r*q2_1)
-    test_2 = np.sum(window_r*q2_2)
-    if test_1 >= test_2:
-        q2 = q2_1
-        shift_range = shift_range_1/q.shape[0]
-    else:
-        q2 = q2_2
-        shift_range = shift_range_2/q.shape[0]
+    Args:
+        real_part (numpy array): real part of the noisy image to symetrise
+        imag_part (numpy array): imaginary part of the noisy image to symetrise 
 
-    Sf = np.roll(S2, int(shift_range*q.shape[0]), axis=1)
-    ima2 = np.fft.ifft2(np.fft.ifftshift(Sf))
-
-    return np.stack((np.real(ima2), np.imag(ima2)), axis=2)
-
-
-def symetrisation_patch_test(real_part, imag_part):
-    if not isinstance(real_part, np.ndarray):
-        raise TypeError('Please provide a .npy argument')
-    if not isinstance(imag_part, np.ndarray):
-        raise TypeError('Please provide a .npy argument')
+    Returns:
+        np.real(ima2), np.imag(ima2) (numpy array, numpy array): symetrised real and imaginary parts of a noisy image
+    """
     S = np.fft.fftshift(np.fft.fft2(
         real_part[0, :, :, 0] + 1j * imag_part[0, :, :, 0]))
     p = np.zeros((S.shape[0]))  # azimut (ncol)
@@ -288,151 +234,48 @@ def symetrisation_patch_test(real_part, imag_part):
 
     Sf = np.roll(S2, int(shift_range * q.shape[0]), axis=1)
     ima2 = np.fft.ifft2(np.fft.ifftshift(Sf))
-    ima2 = ima2.reshape(1, np.size(ima2, 0), np.size(ima2, 1), 1)
+
     return np.real(ima2), np.imag(ima2)
 
 
-# TODO: add control on training data: exit if does not exists
-def load_train_data(filepath, patch_size, batch_size, stride_size, n_data_augmentation):
-    datagen = GenerateDataset()
-    imgs = datagen.generate_patches(src_dir=filepath, pat_size=patch_size, step=0,
-                                    stride=stride_size, bat_size=batch_size, data_aug_times=n_data_augmentation)
-    return imgs
+def save_image_to_png(image, threshold, image_full_path):
+    """Save a given image to a png file in a given folder
+
+    Args:
+        image (numpy array): image to save 
+        threshold (float): threshold of pixel values of the image to be saved in png
+        image_full_path (str): full path of the image
+
+    Raises:
+        TypeError: if the image is not a numpy array
+    """
+    if not isinstance(image, np.ndarray):
+        raise TypeError('Please provide a numpy array')
+
+    image = np.clip(image, 0, threshold)
+    image = image / threshold * 255
+
+    image = Image.fromarray(image.astype('float64')).convert('L')
+    image.save(image_full_path.replace('npy', 'png'))
 
 
-def load_sar_images(filelist):
-    """ Description
-            ----------
-            Loads files , resize them and append them into a list called data
+def save_image(image, save_dir, prefix, image_name, threshold):
+    """Save a given image to npy and png in a given folder
 
-            Parameters
-            ----------
-            filelist : a path to a folder containing the images
+    Args:
+        image (numpy array): image to save
+        save_dir (str): path to the folder where to save the image
+        prefix (str): prefix of the image file name
+        image_name (str): name of the image file
+        threshold (float): threshold of image pixel values used for png conversion
+    """
+    image_full_path = save_dir + prefix + image_name
 
-            Returns
-            ----------
-            A list of images
+    # Save image to npy file
+    np.save(image_full_path, image)
 
-        """
-    if not isinstance(filelist, list):
-        im = np.load(filelist)
-        return np.array(im).reshape(1, np.size(im, 0), np.size(im, 1), 2)
-    data = []
-    for file in filelist:
-        im = np.load(file)
-        data.append(np.array(im).reshape(1, np.size(im, 0), np.size(im, 1), 2))
-    return data
-
-
-def store_data_and_plot(im, threshold, filename):
-    """ Description
-            ----------
-            Creates an image memory from an object exporting the array interface and returns a
-            converted copy of this image into greyscale mode ("L")
-
-            However, there is not plotting functions' call ?
-
-            Parameters
-            ----------
-            im : the image to store
-            threshold: clip a maximum value in the image array i.e values are to be between 0 and threshold
-            filename: the path to store the result array image in .png
-
-            Returns
-            ----------
-            filename
-
-        """
-    if not isinstance(im, np.ndarray):
-        raise TypeError('Please provide a .npy argument')
-    im = np.clip(im, 0, threshold)
-
-    im = im / threshold * 255
-    im = Image.fromarray(im.astype('float64')).convert('L')
-    im.save(filename.replace('npy', 'png'))
-    return filename
-
-
-def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
-    choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
-               'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
-               'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
-               'SDP_Lambesc': 349.53, 'Grand_Canyon': 287.0, 'domancy': 560, 'Brazil': 103.0}
-    threshold = None
-    for x in choices:
-        if x in imagename:
-            threshold = choices.get(x)
-    if threshold is None:
-        threshold = np.mean(noisy) + 3 * np.std(noisy)
-
-    ####
-    imagename = imagename.split('\\')[-1]
-    ####
-
-    if groundtruth:
-        groundtruthfilename = save_dir + "/groundtruth_" + imagename
-        np.save(groundtruthfilename, groundtruth)
-        store_data_and_plot(groundtruth, threshold, groundtruthfilename)
-
-    denoisedfilename = save_dir + "/denoised_" + imagename
-    np.save(denoisedfilename, denoised)
-    store_data_and_plot(denoised, threshold, denoisedfilename)
-
-    noisyfilename = save_dir + "/noisy_" + imagename
-    np.save(noisyfilename, noisy)
-    store_data_and_plot(noisy, threshold, noisyfilename)
-
-
-def save_real_imag_images(noisy, real_part, imag_part, imagename, save_dir):
-    choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
-               'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
-               'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
-               'SDP_Lambesc': 349.53, 'Grand_Canyon': 287.0, 'Brazil': 103.0}
-    threshold = None
-    for x in choices:
-        if x in imagename:
-            threshold = choices.get(x)
-    if threshold is None:
-        threshold = np.mean(noisy) + 3 * np.std(noisy)
-
-    ####
-    imagename = imagename.split('\\')[-1]
-    ####
-
-    realfilename = save_dir + "/denoised_real_" + imagename
-    np.save(realfilename, real_part)
-    store_data_and_plot(real_part, threshold, realfilename)
-
-    imagfilename = save_dir + "/denoised_imag_" + imagename
-    np.save(imagfilename, imag_part)
-    store_data_and_plot(imag_part, threshold, imagfilename)
-
-
-def save_real_imag_images_noisy(noisy, real_part, imag_part, imagename, save_dir):
-    choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
-               'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
-               'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
-               'SDP_Lambesc': 349.53, 'Grand_Canyon': 287.0, 'Brazil': 103.0}
-    threshold = None
-    for x in choices:
-        if x in imagename:
-            threshold = choices.get(x)
-    if threshold is None:
-        threshold = np.mean(np.abs(noisy)) + 3 * np.std(np.abs(noisy))
-
-    ####
-    imagename = imagename.split('\\')[-1]
-    ####
-
-    realfilename = save_dir + "/noisy_real_" + imagename
-    np.save(realfilename, real_part)
-    store_data_and_plot(np.sqrt(2) * np.abs(real_part),
-                        threshold, realfilename)
-
-    imagfilename = save_dir + "/noisy_imag_" + imagename
-    np.save(imagfilename, imag_part)
-    store_data_and_plot(np.sqrt(2) * np.abs(imag_part),
-                        threshold, imagfilename)
+    # Save image to png file
+    save_image_to_png(image, threshold, image_full_path)
 
 
 def cal_psnr(Shat, S):
@@ -749,10 +592,11 @@ def get_info_image(image_path, destination_directory_path):
     threshold = np.mean(image) + 3 * np.std(image)
 
     # DISPLAY FULL PICTURE
-    filename = store_data_and_plot(
-        image, threshold, destination_directory_path + '/image_provided.npy')
+    image_full_path = destination_directory_path + '/image_provided.npy'
+    save_image_to_png(
+        image, threshold, image_full_path)
     print('full picture in png is saved')
-    image_png = cv2.imread(filename.replace('npy', 'png'))
+    image_png = cv2.imread(image_full_path.replace('npy', 'png'))
     print('full picture in png has a dimension of {size}'.format(
         size=image_png.shape))
 

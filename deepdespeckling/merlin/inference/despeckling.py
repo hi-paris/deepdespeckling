@@ -5,23 +5,25 @@ from pathlib import Path
 import numpy as np
 
 from deepdespeckling.merlin.inference.denoiser import Denoiser
-from deepdespeckling.utils.utils import (crop, crop_fixed, get_info_image, preprocess_and_store_sar_images_from_coordinates,
-                                         store_data_and_plot, create_empty_folder_in_directory,
-                                         preprocess_and_store_sar_images)
+from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
+from deepdespeckling.utils.utils import (crop, crop_fixed, get_info_image, preprocess_and_store_sar_images_from_coordinates, save_image_to_png,
+                                         create_empty_folder_in_directory, preprocess_and_store_sar_images)
 
 
 this_dir, this_filename = os.path.split(__file__)
+logging.basicConfig(level=logging.INFO)
 
 
-def despeckle(sar_images_path, destination_directory_path, stride_size=64, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
+def despeckle(sar_images_path, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+              patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE):
     """Despeckle coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
         sar_images_path (str): path of sar images
         destination_directory_path (str): path of folder in which results will be stored
-        stride_size (int): stride size. Defaults to 64.
+        patch_size (int): patch size. Defaults to constant PATCH_SIZE.
+        stride_size (int): stride size. Defaults to constant STRIDE_SIZE.
         model_weights_path (str): path to model weights (pth file). Defaults to os.path.join(this_dir, "saved_model", "spotlight.pth").
-        patch_size (int): patch size. Defaults to 256.
 
     Returns:
         denoised_image (npy): denoised image in a numpy array (last image contained in sar_images_path)
@@ -35,27 +37,24 @@ def despeckle(sar_images_path, destination_directory_path, stride_size=64, model
     preprocess_and_store_sar_images(
         sar_images_path=sar_images_path, processed_images_path=processed_images_path)
 
-    processed_images_paths = glob((processed_images_path + '/*.npy'))
-
     logging.info(
-        f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
-    denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size)
+        f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    return denoised_image
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)
 
 
-def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_directory_path, stride_size=64,
-                               model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
+def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+                               patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE):
     """Despeckle specified area in coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
         sar_images_path (str): path of sar images
         coordinates_dict (dict): dictionary containing pixel boundaries of the area to despeckle (x_start, x_end, y_start, y_end)
         destination_directory_path (str): path of folder in which results will be stored
-        stride_size (int): stride size. Defaults to 64.
+        patch_size (int): patch size. Defaults to constant PATCH_SIZE.
+        stride_size (int): stride size. Defaults to constant STRIDE_SIZE.
         model_weights_path (str): path to model weights (pth file). Defaults to os.path.join(this_dir, "saved_model", "spotlight.pth").
-        patch_size (int): patch size. Defaults to 256.
 
     Returns:
        denoised_image (npy): denoised specified area in image stored in a numpy array (last image contained in sar_images_path)
@@ -70,28 +69,22 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
                                                      coordinates_dict=coordinates_dict)
 
     logging.info(
-        f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
+        f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    processed_images_paths = glob((processed_images_path + '/*.npy'))
-
-    denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size)
-
-    return denoised_image
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)
 
 
-def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size=64,
-                        model_weights_path=os.path.join(
-                            this_dir, "saved_model", "spotlight.pth"),
-                        patch_size=256, fixed=True):
+def despeckle_from_crop(sar_images_path, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+                        patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE, fixed=True):
     """Despeckle specified area with an integrated cropping tool (made with OpenCV) in coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
         sar_images_path (str): path of sar images
         destination_directory_path (str): path of folder in which results will be stored
-        stride_size (int): stride size. Defaults to 64.
+        patch_size (int): patch size. Defaults to constant PATCH_SIZE.
+        stride_size (int): stride size. Defaults to constant STRIDE_SIZE.
         model_weights_path (str): path to model weights (pth file). Defaults to os.path.join(this_dir, "saved_model", "spotlight.pth").
-        patch_size (int): patch size. Defaults to 256.
         fixed (bool) : If True, crop size is limited to 256*256. Defaults to True
 
     Returns:
@@ -123,12 +116,10 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size
 
         image_data_real_cropped = np.load(
             processed_images_path + '/image_data_real_cropped.npy')
-        store_data_and_plot(image_data_real_cropped, threshold,
-                            processed_images_path + '/image_data_real_cropped.npy')
+        os.remove(processed_images_path + '/image_data_real_cropped.npy')
         image_data_imag_cropped = np.load(
             processed_images_path + '/image_data_imag_cropped.npy')
-        store_data_and_plot(image_data_imag_cropped, threshold,
-                            processed_images_path + '/image_data_imag_cropped.npy')
+        os.remove(processed_images_path + '/image_data_imag_cropped.npy')
 
         image_data_real_cropped = image_data_real_cropped.reshape(image_data_real_cropped.shape[0],
                                                                   image_data_real_cropped.shape[1], 1)
@@ -139,12 +130,8 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, stride_size
         np.save(processed_images_path + '/' + p.stem + '_cropped_to_denoise',
                 np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
 
-    processed_cropped_images_paths = glob(
-        (processed_images_path + '/*_cropped_to_denoise.npy'))
-
     logging.info(
-        f"Starting inference.. Working directory: {os.getcwd()}. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
-    denoised_image = Denoiser().denoise_images(images_to_denoise_paths=processed_cropped_images_paths, weights_path=model_weights_path, save_dir=destination_directory_path,
-                                               stride=stride_size)
+        f"Starting inference.. Collecting data from {sar_images_path} and storing results in {destination_directory_path}")
 
-    return denoised_image
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)

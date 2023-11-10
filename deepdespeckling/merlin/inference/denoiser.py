@@ -1,12 +1,14 @@
+import logging
 import torch
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
+from glob import glob
 
 from deepdespeckling.merlin.inference.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_for_testing, get_maximum_patch_size_from_image_dimensions, load_sar_images, save_real_imag_images,
-                                         save_real_imag_images_noisy, save_sar_images, symetrisation_patch_test)
+from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image,
+                                         symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
 
 
 class Denoiser(object):
@@ -25,28 +27,67 @@ class Denoiser(object):
     def __init__(self, input_c_dim=1):
         self.input_c_dim = input_c_dim
 
-    def load(self, model, weights_path):
-        """ Description
-                    ----------
-                    Restores a checkpoint located in a checkpoint repository
+    def save_despeckled_images(self, despeckled_images, image_name, save_dir):
+        """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
 
-                    Parameters
-                    ----------
-                    checkpoint_dir : a path leading to the checkpoint file
-
-                    Returns
-                    ----------
-                    True : Restoration is a success
-                    False: Restoration has failed
+        Args:
+            despeckled_images (dict): dictionary containing full, real and imaginary parts of noisy and denoised image
+            image_name (str): name of the image
+            save_dir (str): path to the folder where to save the png images
         """
-        print("[*] Loading the model...")
+        threshold = np.mean(
+            despeckled_images["noisy"]["full"]) + 3 * np.std(despeckled_images["noisy"]["full"])
+        image_name = image_name.split('\\')[-1]
 
-        model.load_state_dict(torch.load(weights_path))
+        for key in despeckled_images:
+            create_empty_folder_in_directory(save_dir, key)
+            for key2 in despeckled_images[key]:
+                save_image(
+                    despeckled_images[key][key2], save_dir, f"/{key}/{key}_{key2}_", image_name, threshold)
+
+    def load_model(self, weights_path, patch_size):
+        """Load model with given weights 
+
+        Args:
+            weights_path (str): path to weights  
+            patch_size (int): patch size
+
+        Returns:
+            model (Model): model loaded with stored weights
+        """
+        model = Model(torch.device(
+            "cuda:0" if torch.cuda.is_available() else "cpu"), height=patch_size, width=patch_size)
+        model.load_state_dict(torch.load(
+            weights_path, map_location=torch.device('cpu')))
 
         return model
 
-    def image_to_real_and_imag(self, x, y, i_real_part, i_imag_part, patch_size):
-        """ Get images to denoise in imaginary et real part as torch tensors
+    def initialize_axis_range(self, image_axis_dim, patch_size, stride_size):
+        """Initialize the convolution range for x or y axis
+
+        Args:
+            image_axis_dim (int): axis size
+            patch_size (int): patch size
+            stride_size (int): stride size
+
+        Returns:
+            axis_range (list) : pixel borders of each convolution
+        """
+        if image_axis_dim == patch_size:
+            axis_range = list(np.array([0]))
+        else:
+            axis_range = list(
+                range(0, image_axis_dim - patch_size, stride_size))
+            if (axis_range[-1] + patch_size) < image_axis_dim:
+                axis_range.extend(
+                    range(image_axis_dim - patch_size, image_axis_dim - patch_size + 1))
+
+        return axis_range
+
+    def symetrise_real_and_imaginary_kernel(self, x, y, i_real_part, i_imag_part, patch_size):
+        """ Get subpart of an image to denoise delimited by x and y as an imaginary and a real part, 
+        symetrise it so that the noises are independant in each part,
+        normalize it and return it as torch tensors
 
         Args:
             x (int): x image
@@ -56,16 +97,13 @@ class Denoiser(object):
             patch_size (int): patch size of the convolution
 
         Returns:
-            images to denoise (torch tensor): real and imaginary parts as torch tensors
+            images to denoise (torch tensor): real and imaginary parts symetrised as torch tensors
         """
-        real_to_denoise, imag_to_denoise = symetrisation_patch_test(
+        real_to_denoise, imag_to_denoise = symetrise_real_and_imaginary_parts(
             i_real_part[:, x:x + patch_size, y:y + patch_size, :], i_imag_part[:, x:x + patch_size, y:y + patch_size, :])
 
-        real_to_denoise = torch.tensor(real_to_denoise)
-        imag_to_denoise = torch.tensor(imag_to_denoise)
-
-        real_to_denoise = real_to_denoise.type(torch.float32)
-        imag_to_denoise = imag_to_denoise.type(torch.float32)
+        real_to_denoise = torch.tensor(real_to_denoise).type(torch.float32)
+        imag_to_denoise = torch.tensor(imag_to_denoise).type(torch.float32)
 
         real_to_denoise = (torch.log(torch.square(
             real_to_denoise)+1e-3)-2*m)/(2*(M-m))
@@ -74,120 +112,120 @@ class Denoiser(object):
 
         return real_to_denoise, imag_to_denoise
 
-    def denoise_image(self, image_path, weights_path, save_dir, stride):
-        """Denoise a coSAR image and store the results in a given directory
+    def denoise_image(self, noisy_image, weights_path, patch_size, stride_size):
+        """Preprocess and denoise a coSAR image using given model weights
 
         Args:
-            image_path (str): path to the npy image file
+            noisy_image (numpy array): numpy array containing the noisy image to despeckle 
             weights_path (str): path to the pth model file
-            save_dir (str): path to the directory where the results will be store
-            stride (int): stride of the convolution
+            patch_size (int): size of the patch of the convolution
+            stride_size (int): number of pixels between one convolution to the next
 
         Returns:
             output_image (numpy array): denoised image
         """
-        real_image = load_sar_images(image_path).astype(np.float32)
-        i_real_part = (real_image[:, :, :, 0]).reshape(real_image.shape[0], real_image.shape[1],
-                                                       real_image.shape[2], 1)
-        i_imag_part = (real_image[:, :, :, 1]).reshape(real_image.shape[0], real_image.shape[1],
-                                                       real_image.shape[2], 1)
+        noisy_image = np.array(noisy_image).reshape(
+            1, np.size(noisy_image, 0), np.size(noisy_image, 1), 2)
+        noisy_image_real_part = (noisy_image[:, :, :, 0]).reshape(noisy_image.shape[0], noisy_image.shape[1],
+                                                                  noisy_image.shape[2], 1)
+        noisy_image_imaginary_part = (noisy_image[:, :, :, 1]).reshape(noisy_image.shape[0], noisy_image.shape[1],
+                                                                       noisy_image.shape[2], 1)
 
         # Pad the image
-        im_h = np.size(real_image, 1)
-        im_w = np.size(real_image, 2)
+        image_height = np.size(noisy_image, 1)
+        image_width = np.size(noisy_image, 2)
 
-        patch_size = get_maximum_patch_size_from_image_dimensions(
-            kernel_size=256, height=im_h, width=im_w)
-        print(f"The model uses a patch size of {patch_size}")
+        model = self.load_model(
+            weights_path=weights_path, patch_size=patch_size)
 
-        loaded_model = Model(torch.device(
-            "cuda:0" if torch.cuda.is_available() else "cpu"), height=patch_size, width=patch_size)
-        loaded_model.load_state_dict(torch.load(
-            weights_path, map_location=torch.device('cpu')))
+        count_image = np.zeros(noisy_image_real_part.shape)
+        denoised_image_real_part = np.zeros(noisy_image_real_part.shape)
+        denoised_image_imaginary_part = np.zeros(noisy_image_real_part.shape)
 
-        count_image = np.zeros(i_real_part.shape)
-        output_clean_image_1 = np.zeros(i_real_part.shape)
-        output_clean_image_2 = np.zeros(i_real_part.shape)
-
-        if im_h == patch_size:
-            x_range = list(np.array([0]))
-        else:
-            x_range = list(range(0, im_h - patch_size, stride))
-            if (x_range[-1] + patch_size) < im_h:
-                x_range.extend(range(im_h - patch_size, im_h - patch_size + 1))
-
-        if im_w == patch_size:
-            y_range = list(np.array([0]))
-        else:
-            y_range = list(range(0, im_w - patch_size, stride))
-            if (y_range[-1] + patch_size) < im_w:
-                y_range.extend(range(im_w - patch_size, im_w - patch_size + 1))
+        x_range = self.initialize_axis_range(
+            image_height, patch_size, stride_size)
+        y_range = self.initialize_axis_range(
+            image_width, patch_size, stride_size)
 
         for x in tqdm(x_range):
             for y in y_range:
-                real_to_denoise, imag_to_denoise = self.image_to_real_and_imag(
-                    x, y, i_real_part, i_imag_part, patch_size)
+                real_to_denoise, imag_to_denoise = self.symetrise_real_and_imaginary_kernel(
+                    x, y, noisy_image_real_part, noisy_image_imaginary_part, patch_size)
 
-                tmp_clean_image_real = loaded_model.forward(
+                tmp_clean_image_real = model.forward(
                     real_to_denoise).detach().numpy()
                 tmp_clean_image_real = np.moveaxis(tmp_clean_image_real, 1, -1)
 
-                output_clean_image_1[:, x:x + patch_size, y:y + patch_size, :] = output_clean_image_1[:, x:x + patch_size,
-                                                                                                      y:y + patch_size,
-                                                                                                      :] + tmp_clean_image_real
+                denoised_image_real_part[:, x:x + patch_size, y:y + patch_size, :] = denoised_image_real_part[:, x:x + patch_size,
+                                                                                                              y:y + patch_size,
+                                                                                                              :] + tmp_clean_image_real
 
-                tmp_clean_image_imag = loaded_model.forward(
+                tmp_clean_image_imag = model.forward(
                     imag_to_denoise).detach().numpy()
                 tmp_clean_image_imag = np.moveaxis(tmp_clean_image_imag, 1, -1)
 
-                output_clean_image_2[:, x:x + patch_size, y:y + patch_size, :] = output_clean_image_2[:, x:x + patch_size,
-                                                                                                      y:y + patch_size,
-                                                                                                      :] + tmp_clean_image_imag
+                denoised_image_imaginary_part[:, x:x + patch_size, y:y + patch_size, :] = denoised_image_imaginary_part[:, x:x + patch_size,
+                                                                                                                        y:y + patch_size,
+                                                                                                                        :] + tmp_clean_image_imag
                 count_image[:, x:x + patch_size, y:y + patch_size, :] = count_image[:, x:x + patch_size, y:y + patch_size,
                                                                                     :] + np.ones((1, patch_size, patch_size, 1))
 
-        output_clean_image_1 = output_clean_image_1 / count_image
-        output_clean_image_2 = output_clean_image_2 / count_image
+        denoised_image_real_part = denormalize_sar_image(
+            denoised_image_real_part / count_image)
+        denoised_image_imaginary_part = denormalize_sar_image(
+            denoised_image_imaginary_part / count_image)
 
         # combine the two estimation
-        output_clean_image = 0.5 * (np.square(denormalize_sar_for_testing(
-            output_clean_image_1)) + np.square(denormalize_sar_for_testing(output_clean_image_2)))
+        output_clean_image = 0.5 * (np.square(
+            denoised_image_real_part) + np.square(denoised_image_imaginary_part))
 
-        noisyimage = np.squeeze(np.sqrt(i_real_part ** 2 + i_imag_part ** 2))
-        output_image = np.sqrt(np.squeeze(output_clean_image))
+        noisy_image = np.squeeze(
+            np.sqrt(noisy_image_real_part ** 2 + noisy_image_imaginary_part ** 2))
+        denoised_image = np.sqrt(np.squeeze(output_clean_image))
 
-        imagename = Path(image_path).name
+        despeckled_image = {"noisy": {"full": noisy_image,
+                                      "real": np.squeeze(noisy_image_real_part),
+                                      "imaginary": np.squeeze(noisy_image_imaginary_part)
+                                      },
+                            "denoised": {"full": denoised_image,
+                                         "real": denoised_image_real_part,
+                                         "imaginary": denoised_image_imaginary_part
+                                         }
+                            }
 
-        print(f"Denoised image {imagename}")
+        return despeckled_image
 
-        save_sar_images(output_image, noisyimage, imagename, save_dir)
-        save_real_imag_images(noisyimage, denormalize_sar_for_testing(output_clean_image_1), denormalize_sar_for_testing(output_clean_image_2),
-                              imagename, save_dir)
-        save_real_imag_images_noisy(noisyimage, np.squeeze(
-            i_real_part), np.squeeze(i_imag_part), imagename, save_dir)
-
-        return output_image
-
-    def denoise_images(self, images_to_denoise_paths, weights_path, save_dir, stride):
+    def denoise_images(self, images_to_denoise_path, weights_path, save_dir, patch_size, stride_size):
         """Iterate over a directory of coSAR images and store the denoised images in a directory
 
         Args:
-            images_to_denoise_paths (list): a list of paths of npy images to denoise
+            images_to_denoise_path (list): a list of paths of npy images to denoise
             weights_path (str): path to the pth file containing the weights of the model
             save_dir (str): repository to save sar images, real images and noisy images
-            stride (int): number of bytes from one row of pixels in memory to the next row of pixels in memory
             patch_size (int): size of the patch of the convolution
+            stride_size (int): number of pixels between one convolution to the next
 
         Returns:
-            idx_image (numpya array) : last image to be denoised
+            idx_image (numpy array) : last image to be denoised
         """
+
+        images_to_denoise_paths = glob((images_to_denoise_path + '/*.npy'))
 
         assert len(images_to_denoise_paths) != 0, 'No data!'
 
-        print(f"Starting denoising images in {images_to_denoise_paths}")
+        logging.info(f"Starting denoising images in {images_to_denoise_paths}")
 
         for idx in range(len(images_to_denoise_paths)):
-            idx_image = self.denoise_image(
-                images_to_denoise_paths[idx], weights_path, save_dir, stride)
+            image_name = Path(images_to_denoise_paths[idx]).name
+            logging.info(
+                f"Despeckling {image_name}")
 
-        return idx_image
+            noisy_image_idx = load_sar_image(
+                images_to_denoise_paths[idx]).astype(np.float32)
+            despeckled_images = self.denoise_image(
+                noisy_image_idx, weights_path, patch_size, stride_size)
+
+            logging.info(
+                f"Saving despeckled images in {save_dir}")
+            self.save_despeckled_images(
+                despeckled_images, image_name, save_dir)
