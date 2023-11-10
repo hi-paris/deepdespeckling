@@ -1,15 +1,16 @@
-# deepdespeckling Synthetic Aperture Radar (SAR) images with Pytorch
+# deepdespeckling 
+## Synthetic Aperture Radar (SAR) images despeckling with Pytorch
 
-Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that can highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
+Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that are leveraging deep learning to highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
  
-The package contains both test and train parts, wether you wish to despeckle a single pic (test) or use our model to build or improve your own.
+The package contains both inference and training parts, wether you wish to despeckle a set of SAR images or use our model to build or improve your own.
 
 To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
 
 [![PyPI version](https://badge.fury.io/py/deepdespeckling.svg)](https://badge.fury.io/py/deepdespeckling)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# Installation
+## Installation
 
 Install deepdespeckling by running in the command prompt :
 
@@ -17,7 +18,7 @@ Install deepdespeckling by running in the command prompt :
 pip install deepdespeckling
 ```
 
-# Authors
+## Authors
 
 
 * [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
@@ -26,52 +27,62 @@ pip install deepdespeckling
 * [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Machine Learning Research Engineer)
 
 
-# Use cases
+## Examples
 
-### Test
 The package offers you 3 different methods for despeckling your SAR images: the fullsize method, the coordinates based method and the crop method.
 
-1) I have a high-resolution SAR image and I want to apply the despeckling function to the whole of it:
+### Despeckle fullsize images
 
 ```python
 from deepdespeckling.merlin.inference.despeckling import despeckle
 
+# Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
+# Folder where results are stored
 destination_directory="path/where/to/save/results"
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 
-despeckle_spotlight(image_path,destination_directory,model_weights_path=model_weights_path)
+denoised_image = despeckle(image_path, destination_directory, model_weights_path=model_weights_path)
 ```
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
 ![](img/entire/noisy.png)  |  ![](img/entire/denoised.png)
 
-2) I have a high-resolution SAR image but I only want to apply the despeckling function to a specific area for which I know the coordinates:
+### Despeckle parts of images using custom coordinates
+
 ```python
 from deepdespeckling.merlin.inference.despeckling import despeckle_from_coordinates
 
+# Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
+# Folder where results are stored
 destination_directory="path/where/to/save/results"
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
-despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destination_directory, model_weights_path)
-````
+denoised_image = despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_weights_path)
+```
 
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
 ![](img/coordinates/noisy_test_image_data.png)  |  ![](img/coordinates/denoised_test_image_data.png)
 
-3) I have a high-resolution SAR image but I want to apply the despeckling function to an area I want to select with a crop:
+### Despeckle parts of images using a crop tool
+
 ```python
 from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
 
+# Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
+# Folder where results are stored
 destination_directory="path/where/to/save/results"
+# Path to the model weights (pth file)
 model_weights_path="path/to/model/weights"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
-despeckle_from_crop_spotlight(image_path, destination_directory, model_weights_path, fixed=False)
+denoised_image = despeckle_from_crop(image_path, destination_directory, model_weights_path, fixed=False)
 ```
 
 * The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
@@ -86,8 +97,8 @@ Noisy cropped image                     |           Denoised cropped image
 :-----------------------------------------------------------:|:------------------------------------------:
  <img src="img/crop/noisy_test_image_data.png" width="100%"> | <img src="img/crop/denoised_test_image_data.png" width="1000%">
 
-you can use the same features for stripmap images by changing the weights_path 
-### Train
+
+### Train a new model
 
 1) I want to train my own model from scratch:
 ```python
@@ -107,7 +118,7 @@ sample_directory="path/to/sample/data"
 from_pretrained=False
 
 model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
 
 ```
 
@@ -129,8 +140,8 @@ save_directory="path/where/to/save/results"
 sample_directory="path/to/sample/data"
 from_pretrained=True
 
-model=create_model(Model,batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model,lr,nb_epoch,training_set_directory,validation_set_directory,sample_directory,save_directory,seed=2)
+model=create_model(Model, batch_size=12, val_batch_size=1, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), from_pretrained=from_pretrained)
+fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
 ```
 
 # Contribute
