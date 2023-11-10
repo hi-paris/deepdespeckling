@@ -2,6 +2,8 @@ import glob
 import numpy as np
 from scipy import signal
 
+from deepdespeckling.utils.constants import PATCH_SIZE
+
 
 '''
 Generate patches for the images in the folder dataset/data/Train
@@ -92,7 +94,7 @@ class GenerateDataset():
         ima2 = np.fft.ifft2(np.fft.ifftshift(Sf))
         return np.stack((np.real(ima2), np.imag(ima2)), axis=2)
 
-    def generate_patches(self, src_dir="./dataset/data/Train", patch_size=256, step=0, stride=64, bat_size=4, data_aug_times=1, n_channels=2):
+    def generate_patches(self, src_dir="./dataset/data/Train", patch_size=PATCH_SIZE, step=0, stride=64, bat_size=4, data_aug_times=1, n_channels=2):
         count = 0
         filepaths = glob.glob(src_dir + '/*.npy')
         print("number of training data %d" % len(filepaths))
