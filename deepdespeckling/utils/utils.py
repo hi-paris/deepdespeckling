@@ -7,7 +7,6 @@ from pathlib import Path
 from glob import glob
 
 from deepdespeckling.merlin.inference.load_cosar import cos2mat
-from deepdespeckling.merlin.training.GenerateDataset import GenerateDataset
 from deepdespeckling.utils.constants import M, m
 
 
@@ -62,10 +61,8 @@ def load_sar_images(file_list):
         """
     if not isinstance(file_list, list):
         image = np.load(file_list)
-        print(image.shape)
         image = np.array(image).reshape(
             1, np.size(image, 0), np.size(image, 1), 2)
-        print(image.shape)
         return image
     data = []
     for file in file_list:
@@ -238,6 +235,23 @@ def symetrise_real_and_imaginary_parts(real_part, imag_part):
     return np.real(ima2), np.imag(ima2)
 
 
+def preprocess_image(image, threshold):
+    """Preprocess image by limiting pixel values with a threshold
+
+    Args:
+        image (numpy array): image to preprocess
+        threshold (int): pixel value threshold 
+
+    Returns:
+        image (cv2 Image): image to be saved
+    """
+    image = np.clip(image, 0, threshold)
+    image = image / threshold * 255
+    image = Image.fromarray(image.astype('float64')).convert('L')
+
+    return image
+
+
 def save_image_to_png(image, threshold, image_full_path):
     """Save a given image to a png file in a given folder
 
@@ -252,14 +266,11 @@ def save_image_to_png(image, threshold, image_full_path):
     if not isinstance(image, np.ndarray):
         raise TypeError('Please provide a numpy array')
 
-    image = np.clip(image, 0, threshold)
-    image = image / threshold * 255
-
-    image = Image.fromarray(image.astype('float64')).convert('L')
+    image = preprocess_image(image, threshold=threshold)
     image.save(image_full_path.replace('npy', 'png'))
 
 
-def save_image(image, save_dir, prefix, image_name, threshold):
+def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
     """Save a given image to npy and png in a given folder
 
     Args:
@@ -287,173 +298,9 @@ def cal_psnr(Shat, S):
     return res
 
 
-def crop_fixed(image_png, image_data_real, image_data_imag, destination_directory_path, processed_images_path):
-    """ A crapping tool for despeckling only the selection of the user, made with OpenCV
-
-            Parameters
-            ----------
-            image_png: .png file
-            the image to be cropped in png format
-
-            image_data_real: nd.array
-            the real part of the image stored in an array
-
-            image_data_imag: nd.array
-            the imaginary part of the image stored in an array
-
-            destination_directory_path: string
-            the path for saving results in
-
-            processed_images_path: string
-            the path for saving results in
-
-            cropping: bool
-            A boolean stating if the user wants to crop the image or not
-
-
-            Returns
-            ----------
-            None
-
-        """
-
-    # HERE I READ THE PNG FILE
-    oriImage = image_png.copy()
-    cropping = False
-    x_start, y_start, x_end, y_end = 0, 0, 0, 0
-
-    # CV2 CROPPING IN WINDOW
-    def mouse_crop_fixed(event, x, y, flags, param):
-        """ The callback function of crop() to deal with user's events
-        """
-        global x_start, y_start, x_end, y_end, cropping
-        cropping = False
-        if event == cv2.EVENT_LBUTTONDOWN:
-            x_start, y_start, x_end, y_end = x, y, x, y
-            cropping = True
-
-        # Mouse is Moving
-        elif event == cv2.EVENT_MOUSEMOVE:
-            x_end, y_end = x, y
-
-        # if the left mouse button was released
-        elif event == cv2.EVENT_LBUTTONUP:
-            # record the ending (x, y) coordinates
-            x_end, y_end = x, y
-            # case crop is done bottom right - top left : WORKS
-            if x_start > x_end and y_start > y_end:
-                tempxstart = x_start
-                tempystart = y_start
-
-                x_start = tempxstart - 32
-                x_end = tempxstart
-
-                y_start = tempystart - 32
-                y_end = tempystart
-
-            elif x_start > x_end and y_start < y_end:
-                tempxstart = x_start
-                tempystart = y_start
-
-                x_start = tempxstart - 32
-                y_start = tempystart
-
-                x_end = tempxstart
-                y_end = tempystart + 32
-
-            elif x_start < x_end and y_start > y_end:
-                tempxstart = x_start
-                tempystart = y_start
-
-                x_start = tempxstart
-                y_start = tempystart - 32
-                x_end = tempxstart + 32
-                y_end = tempystart
-
-            else:
-                x_end = x_start + 32
-                y_end = y_start + 32
-
-            refPoint = [(x_start, y_start), (x_end, y_end)]
-            # cropping is finished
-            cv2.rectangle(image, (x_start, y_start),
-                          (x_end, y_end), (255, 0, 0), 2)
-            cropping = False
-
-            if len(refPoint) == 2:  # when two points were found
-                image_data_real_cropped = image_data_real[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
-                image_data_imag_cropped = image_data_imag[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
-                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1]
-                               * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
-                roi = cv2.resize(roi, (256, 256))
-                cv2.imwrite(destination_directory_path +
-                            '/cropped_npy_to_png.png', roi)
-                cv2.imshow("Cropped", roi)
-                cropped_img_png = Image.open(
-                    destination_directory_path + '/cropped_npy_to_png.png')
-                numpy_crop = np.asarray(cropped_img_png)
-                np.save(destination_directory_path +
-                        '/cropped.npy', numpy_crop)
-                np.save(processed_images_path + '/image_data_real_cropped.npy',
-                        image_data_real_cropped)
-                np.save(processed_images_path + '/image_data_imag_cropped.npy',
-                        image_data_imag_cropped)
-
-    h, w, c = image_png.shape
-    # resizing image
-    image = cv2.resize(image_png, (int(w / 8), int(h / 8)))
-    cv2.namedWindow("image")
-    cv2.setMouseCallback("image", mouse_crop_fixed)
-
-    while True:
-        i = image.copy()
-
-        if not cropping:
-            cv2.imshow("image", image)
-
-        elif cropping:
-            cv2.imshow("image", i)
-
-        key = cv2.waitKey(10)
-        if key == ord('q'):
-            cv2.destroyAllWindows()
-            return
-
-
-def crop(image_png, image_data_real, image_data_imag, destination_directory_path, processed_images_path):
-    """ A crapping tool for despeckling only the selection of the user, made with OpenCV
-
-            Parameters
-            ----------
-            image_png: .png file
-            the image to be cropped in png format
-
-            image_data_real: nd.array
-            the real part of the image stored in an array
-
-            image_data_imag: nd.array
-            the imaginary part of the image stored in an array
-
-            destination_directory_path: string
-            the path for saving results in
-
-            processed_images_path: string
-            the path for saving results in
-
-            cropping: bool
-            A boolean stating if the user wants to crop the image or not
-
-
-            Returns
-            ----------
-            None
-
-        """
-
-    # HERE I READ THE PNG FILE
-    oriImage = image_png.copy()
+def get_cropping_coordinates(image, destination_directory_path, fixed=True):
+    image = preprocess_sar_image_for_cropping(image)
+    full_image = image.copy()
     cropping = False
     x_start, y_start, x_end, y_end = 0, 0, 0, 0
 
@@ -476,37 +323,70 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory_path
         elif event == cv2.EVENT_LBUTTONUP:
             # record the ending (x, y) coordinates
             x_end, y_end = x, y
-            # case crop is done bottom right - top left : WORKS
-            if x_start > x_end and y_start > y_end:
-                tempx = x_start
-                x_start = x_end
-                x_end = tempx
+            if fixed:
+                if x_start > x_end and y_start > y_end:
+                    tempxstart = x_start
+                    tempystart = y_start
 
-                tempy = y_start
-                y_start = y_end
-                y_end = tempy
+                    x_start = tempxstart - 32
+                    x_end = tempxstart
 
-            elif x_start > x_end and y_start < y_end:
-                tempxstart = x_start
-                tempystart = y_start
-                tempxend = x_end
-                tempyend = y_end
+                    y_start = tempystart - 32
+                    y_end = tempystart
 
-                x_start = tempxend
-                y_start = tempystart
-                x_end = tempxstart
-                y_end = tempyend
+                elif x_start > x_end and y_start < y_end:
+                    tempxstart = x_start
+                    tempystart = y_start
 
-            elif x_start < x_end and y_start > y_end:
-                tempxstart = x_start
-                tempystart = y_start
-                tempxend = x_end
-                tempyend = y_end
+                    x_start = tempxstart - 32
+                    y_start = tempystart
 
-                x_start = tempxstart
-                y_start = tempyend
-                x_end = tempxend
-                y_end = tempystart
+                    x_end = tempxstart
+                    y_end = tempystart + 32
+
+                elif x_start < x_end and y_start > y_end:
+                    tempxstart = x_start
+                    tempystart = y_start
+
+                    x_start = tempxstart
+                    y_start = tempystart - 32
+                    x_end = tempxstart + 32
+                    y_end = tempystart
+
+                else:
+                    x_end = x_start + 32
+                    y_end = y_start + 32
+            else:
+                if x_start > x_end and y_start > y_end:
+                    tempx = x_start
+                    x_start = x_end
+                    x_end = tempx
+
+                    tempy = y_start
+                    y_start = y_end
+                    y_end = tempy
+
+                elif x_start > x_end and y_start < y_end:
+                    tempxstart = x_start
+                    tempystart = y_start
+                    tempxend = x_end
+                    tempyend = y_end
+
+                    x_start = tempxend
+                    y_start = tempystart
+                    x_end = tempxstart
+                    y_end = tempyend
+
+                elif x_start < x_end and y_start > y_end:
+                    tempxstart = x_start
+                    tempystart = y_start
+                    tempxend = x_end
+                    tempyend = y_end
+
+                    x_start = tempxstart
+                    y_start = tempyend
+                    x_end = tempxend
+                    y_end = tempystart
 
             # cropping is finished
             cv2.rectangle(image, (x_start, y_start),
@@ -516,91 +396,114 @@ def crop(image_png, image_data_real, image_data_imag, destination_directory_path
             refPoint = [(x_start, y_start), (x_end, y_end)]
 
             if len(refPoint) == 2:  # when two points were found
-                image_data_real_cropped = image_data_real[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
-                image_data_imag_cropped = image_data_imag[refPoint[0][1] * 8:refPoint[1][1] * 8,
-                                                          refPoint[0][0] * 8:refPoint[1][0] * 8]
+                cropped_image = full_image[refPoint[0][1] * 8:refPoint[1][1]
+                                           * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
+                if fixed:
+                    cropped_image = cv2.resize(cropped_image, (256, 256))
+                else:
+                    cropped_image = cv2.resize(
+                        cropped_image, (8 * (x_end - x_start), 8 * (y_end - y_start)))
+                cv2.imshow("Cropped", cropped_image)
 
-                roi = oriImage[refPoint[0][1] * 8:refPoint[1][1]
-                               * 8, refPoint[0][0] * 8:refPoint[1][0] * 8]
-                roi = cv2.resize(
-                    roi, (8 * (x_end - x_start), 8 * (y_end - y_start)))
+                with open(destination_directory_path+'/cropping_coordinates.txt', 'w') as filehandle:
+                    for listitem in refPoint:
+                        filehandle.write(f'{listitem}\n')
 
-                cv2.imwrite(destination_directory_path +
-                            '/cropped_npy_to_png.png', roi)
-                cv2.imshow("Cropped", roi)
-                cropped_img_png = Image.open(
-                    destination_directory_path + '/cropped_npy_to_png.png')
-                numpy_crop = np.asarray(cropped_img_png)
-                np.save(destination_directory_path +
-                        '/cropped.npy', numpy_crop)
-                np.save(processed_images_path + '/image_data_real_cropped.npy',
-                        image_data_real_cropped)
-                np.save(processed_images_path + '/image_data_imag_cropped.npy',
-                        image_data_imag_cropped)
-
-    h, w, c = image_png.shape
+    h, w, _ = image.shape
     # resizing image
-    image = cv2.resize(image_png, (int(w / 8), int(h / 8)))
+    image = cv2.resize(image, (int(w / 8), int(h / 8)))
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", mouse_crop)
 
     while True:
         i = image.copy()
-
         if not cropping:
             cv2.imshow("image", image)
-
         elif cropping:
             cv2.imshow("image", i)
-            cv2.rectangle(i, (x_start, y_start),
-                          (x_end, y_end), (255, 0, 0), 2)
-
+            if not fixed:
+                cv2.rectangle(i, (x_start, y_start),
+                              (x_end, y_end), (255, 0, 0), 2)
         key = cv2.waitKey(10)
         if key == ord('q'):
             cv2.destroyAllWindows()
-            return
+            return get_cropping_coordinates_from_file(destination_directory_path=destination_directory_path)
 
 
-def get_info_image(image_path, destination_directory_path):
-    """ A function for retrieving informations on the CoSar stored image such as its png equivalent, its real and
-        imaginary part and the threshold to be applied later
+def get_cropping_coordinates_from_file(destination_directory_path):
+    """Get cropping coordinates from a file where it's stored
 
-            Parameters
-            ----------
-            image_path: string
-            the path leading to image in CoSar format
+    Args:
+        destination_directory_path (str): path of the file in which the cropping coordinates are stored
 
-            destination_directory_path: string
-            the path for saving results in
-
-            Returns
-            ----------
-            None
-
+    Returns:
+        cropping_coordinates (list): list containing cropping coordinates
     """
+    cropping_coordinates = []
 
-    image_data = load_sar_image(image_path=image_path)
+    with open(destination_directory_path+'/cropping_coordinates.txt', 'r') as filehandle:
+        for line in filehandle:
+            # Remove linebreak which is the last character of the string
+            curr_place = eval(line[:-1])
+            # Add item to the list
+            cropping_coordinates.append(curr_place)
 
-    # GET THE TWO PARTS
-    image_data_real = image_data[:, :, 0]
-    image_data_imag = image_data[:, :, 1]
+    return cropping_coordinates
 
-    # GET NOISY FOR THRESHOLD
+
+def crop_image(image, image_path, cropping_coordinates, processed_images_path):
+    """Crop an image using given cropping coordinates and store the result in a given folder
+
+    Args:
+        image (numpy array): image to be cropped
+        image_path (str): path of the image
+        cropping_coordinates (list): list of coordinates of cropping, format [(x1, y1), (x2, y2)]
+        processed_images_path (str): path of the folder where to store the cropped image in npy format
+    """
+    image_real_part = image[:, :, 0]
+    image_imaginary_part = image[:, :, 1]
+
+    cropped_image_real_part = image_real_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
+                                              cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
+    cropped_image_imaginary_part = image_imaginary_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
+                                                        cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
+
+    cropped_image_real_part = cropped_image_real_part.reshape(cropped_image_real_part.shape[0],
+                                                              cropped_image_real_part.shape[1], 1)
+    cropped_image_imaginary_part = cropped_image_imaginary_part.reshape(cropped_image_imaginary_part.shape[0],
+                                                                        cropped_image_imaginary_part.shape[1], 1)
+
+    cropped_image = np.concatenate(
+        (cropped_image_real_part, cropped_image_imaginary_part), axis=2)
+
+    image_path_name = Path(image_path)
+    np.save(processed_images_path + '/' + image_path_name.stem +
+            '_cropped_to_denoise', cropped_image)
+
+
+def preprocess_sar_image_for_cropping(image):
+    """Preprocess image to use the cropping tool
+
+    Args:
+        image (numpy array): image from which we get cropping coordinates by using the cropping tool
+
+    Returns:
+        image (cv2 image): image preprocessed for cropping
+    """
+    image_data_real = image[:, :, 0]
+    image_data_imag = image[:, :, 1]
+
     image = np.squeeze(
         np.sqrt(np.square(image_data_real) + np.square(image_data_imag)))
     threshold = np.mean(image) + 3 * np.std(image)
 
-    # DISPLAY FULL PICTURE
-    image_full_path = destination_directory_path + '/image_provided.npy'
-    save_image_to_png(
-        image, threshold, image_full_path)
-    print('full picture in png is saved')
-    image_png = cv2.imread(image_full_path.replace('npy', 'png'))
-    print('full picture in png has a dimension of {size}'.format(
-        size=image_png.shape))
+    image = np.clip(image, 0, threshold)
+    image = image / threshold * 255
 
-    return image_png, image_data_real, image_data_imag, threshold
+    image = Image.fromarray(image.astype('float64')).convert('L')
+    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+    return image
 
 
 if __name__ == "__main__":

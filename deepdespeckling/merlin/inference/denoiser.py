@@ -7,7 +7,7 @@ from glob import glob
 
 from deepdespeckling.merlin.inference.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image,
+from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image_to_npy_and_png,
                                          symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
 
 
@@ -42,7 +42,7 @@ class Denoiser(object):
         for key in despeckled_images:
             create_empty_folder_in_directory(save_dir, key)
             for key2 in despeckled_images[key]:
-                save_image(
+                save_image_to_npy_and_png(
                     despeckled_images[key][key2], save_dir, f"/{key}/{key}_{key2}_", image_name, threshold)
 
     def load_model(self, weights_path, patch_size):
@@ -204,9 +204,6 @@ class Denoiser(object):
             save_dir (str): repository to save sar images, real images and noisy images
             patch_size (int): size of the patch of the convolution
             stride_size (int): number of pixels between one convolution to the next
-
-        Returns:
-            idx_image (numpy array) : last image to be denoised
         """
 
         images_to_denoise_paths = glob((images_to_denoise_path + '/*.npy'))
