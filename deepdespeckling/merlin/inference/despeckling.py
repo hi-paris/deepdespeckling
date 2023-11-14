@@ -2,7 +2,7 @@ import logging
 import os
 from glob import glob
 
-from deepdespeckling.merlin.inference.denoiser import denoise_images
+from deepdespeckling.merlin.inference.denoiser import Denoiser
 from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
 from deepdespeckling.utils.utils import (crop_image, get_cropping_coordinates, load_sar_image, preprocess_and_store_sar_images_from_coordinates,
                                          create_empty_folder_in_directory, preprocess_and_store_sar_images)
@@ -38,8 +38,8 @@ def despeckle(sar_images_path, destination_directory_path, model_weights_path=os
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                   patch_size=patch_size, stride_size=stride_size)
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)
 
 
 def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
@@ -69,8 +69,8 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                   patch_size=patch_size, stride_size=stride_size)
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)
 
 
 def despeckle_from_crop(sar_images_path, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
@@ -114,5 +114,5 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, model_weigh
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing results in {destination_directory_path}")
 
-    denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                   patch_size=patch_size, stride_size=stride_size)
+    Denoiser().denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
+                              patch_size=patch_size, stride_size=stride_size)
