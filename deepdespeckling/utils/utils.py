@@ -289,10 +289,16 @@ def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
     save_image_to_png(image, threshold, image_full_path)
 
 
-def cal_psnr(Shat, S):
-    # takes amplitudes in input
-    # Shat: a SAR amplitude image
-    # S:    a reference SAR image
+def compute_psnr(Shat, S):
+    """Compute Peak Signal to Noise Ratio
+
+    Args:
+        Shat (numpy array): a SAR amplitude image
+        S (numpy array): a reference SAR image
+
+    Returns:
+        res (float): psnr value
+    """
     P = np.quantile(S, 0.99)
     res = 10 * np.log10((P ** 2) / np.mean(np.abs(Shat - S) ** 2))
     return res
