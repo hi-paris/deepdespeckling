@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from deepdespeckling.utils.constants import M, PATCH_SIZE, m
-from deepdespeckling.utils.utils import cal_psnr, save_image_to_png
+from deepdespeckling.utils.utils import compute_psnr, save_image_to_png
 
 
 class Model(torch.nn.Module):
@@ -246,7 +246,7 @@ class Model(torch.nn.Module):
         outputimage = np.sqrt(np.squeeze(output_clean_image))
 
         # calculate PSNR
-        psnr = cal_psnr(outputimage, noisyimage)
+        psnr = compute_psnr(outputimage, noisyimage)
         print("img%d PSNR: %.2f" % (image_num, psnr))
 
         # rename and save

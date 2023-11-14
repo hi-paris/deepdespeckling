@@ -15,42 +15,42 @@ class Model(torch.nn.Module):
         self.leaky = torch.nn.LeakyReLU(0.1)
 
         self.enc0 = torch.nn.Conv2d(in_channels=1, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc1 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc2 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc3 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc4 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc5 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.enc6 = torch.nn.Conv2d(in_channels=48, out_channels=48, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
 
         self.dec5 = torch.nn.Conv2d(in_channels=96, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.dec5b = torch.nn.Conv2d(in_channels=96, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec4 = torch.nn.Conv2d(in_channels=144, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.dec4b = torch.nn.Conv2d(in_channels=96, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec3 = torch.nn.Conv2d(in_channels=144, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.dec3b = torch.nn.Conv2d(in_channels=96, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec2 = torch.nn.Conv2d(in_channels=144, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
         self.dec2b = torch.nn.Conv2d(in_channels=96, out_channels=96, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec1a = torch.nn.Conv2d(in_channels=97, out_channels=64, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec1b = torch.nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(3, 3), stride=(1, 1),
-                                     padding='same')
+                                     padding='same', device=self.device)
         self.dec1 = torch.nn.Conv2d(in_channels=32, out_channels=1, kernel_size=(3, 3), stride=(1, 1),
-                                    padding='same')
+                                    padding='same', device=self.device)
 
         self.upscale2d = torch.nn.UpsamplingNearest2d(scale_factor=2)
 

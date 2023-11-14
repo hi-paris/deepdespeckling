@@ -7,25 +7,16 @@ from glob import glob
 
 from deepdespeckling.merlin.inference.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image,
+from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image_to_npy_and_png,
                                          symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
 
 
-class Denoiser(object):
-    """ Description
-                ----------
-                A set of initial conditions, and transformations on the Y
-
-                Parameters
-                ----------
-                denoiser : an object
-
-                Returns
-                ----------
+class Denoiser():
+    """Class to share parameters beyond denoising functions
     """
 
-    def __init__(self, input_c_dim=1):
-        self.input_c_dim = input_c_dim
+    def __init__(self):
+        self.device = self.get_device()
 
     def save_despeckled_images(self, despeckled_images, image_name, save_dir):
         """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
@@ -42,8 +33,24 @@ class Denoiser(object):
         for key in despeckled_images:
             create_empty_folder_in_directory(save_dir, key)
             for key2 in despeckled_images[key]:
-                save_image(
+                save_image_to_npy_and_png(
                     despeckled_images[key][key2], save_dir, f"/{key}/{key}_{key2}_", image_name, threshold)
+
+    def get_device(self):
+        """Get torch device to use depending on gpu's availability
+
+        Returns:
+            device (str): device to be used by torch
+        """
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            device = "mps"
+        elif torch.cuda.is_available():
+            device = "cuda:0"
+        else:
+            device = "cpu"
+        logging.info(f"{device} device is used by torch")
+
+        return device
 
     def load_model(self, weights_path, patch_size):
         """Load model with given weights 
@@ -55,10 +62,10 @@ class Denoiser(object):
         Returns:
             model (Model): model loaded with stored weights
         """
-        model = Model(torch.device(
-            "cuda:0" if torch.cuda.is_available() else "cpu"), height=patch_size, width=patch_size)
+        model = Model(torch.device(self.device),
+                      height=patch_size, width=patch_size)
         model.load_state_dict(torch.load(
-            weights_path, map_location=torch.device('cpu')))
+            weights_path, map_location=torch.device("cpu")))
 
         return model
 
@@ -102,8 +109,10 @@ class Denoiser(object):
         real_to_denoise, imag_to_denoise = symetrise_real_and_imaginary_parts(
             i_real_part[:, x:x + patch_size, y:y + patch_size, :], i_imag_part[:, x:x + patch_size, y:y + patch_size, :])
 
-        real_to_denoise = torch.tensor(real_to_denoise).type(torch.float32)
-        imag_to_denoise = torch.tensor(imag_to_denoise).type(torch.float32)
+        real_to_denoise = torch.tensor(
+            real_to_denoise, device=self.device, dtype=torch.float32)
+        imag_to_denoise = torch.tensor(
+            imag_to_denoise, device=self.device, dtype=torch.float32)
 
         real_to_denoise = (torch.log(torch.square(
             real_to_denoise)+1e-3)-2*m)/(2*(M-m))
@@ -111,6 +120,84 @@ class Denoiser(object):
             imag_to_denoise)+1e-3)-2*m)/(2*(M-m))
 
         return real_to_denoise, imag_to_denoise
+
+    def denoise_image_kernel(self, symetrised_noisy_image, symetrised_denoised_image, x, y, patch_size, model, normalisation_kernel=False):
+        """Denoise a subpart of a given symetrised noisy image delimited by x, y and patch_size using a given model
+
+        Args:
+            symetrised_noisy_image (numpy array): symetrised noisy image to denoise
+            symetrised_denoised_image (numpy array): symetrised partially denoised image
+            x (int): x coordinate of current kernel to denoise
+            y (int): y coordinate of current kernel to denoise
+            patch_size (int): patch size
+            model (Model): trained model with loaded weights 
+            normalisation_kernel (bool, optional): Determine if. Defaults to False.
+
+        Returns:
+            symetrised_denoised_image (numpy array): image denoised in the given coordinates and the ones already iterated
+        """
+        if not normalisation_kernel:
+
+            if self.device != 'cpu':
+                tmp_clean_image = model.forward(
+                    symetrised_noisy_image).cpu().detach().numpy()
+            else:
+                tmp_clean_image = model.forward(
+                    symetrised_noisy_image).detach().numpy()
+
+            tmp_clean_image = np.moveaxis(tmp_clean_image, 1, -1)
+            symetrised_denoised_image[:, x:x + patch_size, y:y + patch_size, :] = symetrised_denoised_image[:, x:x + patch_size,
+                                                                                                            y:y + patch_size,
+                                                                                                            :] + tmp_clean_image
+        else:
+            symetrised_denoised_image[:, x:x + patch_size, y:y + patch_size, :] = symetrised_denoised_image[:, x:x + patch_size,
+                                                                                                            y:y + patch_size,
+                                                                                                            :] + np.ones((1, patch_size, patch_size, 1))
+        return symetrised_denoised_image
+
+    def preprocess_noisy_image(self, noisy_image):
+        """preprocess a given noisy image and generates its real and imaginary parts
+
+        Args:
+            noisy_image (numpy array): noisy image
+
+        Returns:
+            noisy_image, noisy_image_real_part, noisy_image_imaginary_part (numpy array, numpy array, numpy array): 
+            preprocessed noisy image, real part of noisy image, imaginary part of noisy image
+        """
+        noisy_image_real_part = (noisy_image[:, :, :, 0]).reshape(noisy_image.shape[0], noisy_image.shape[1],
+                                                                  noisy_image.shape[2], 1)
+        noisy_image_imaginary_part = (noisy_image[:, :, :, 1]).reshape(noisy_image.shape[0], noisy_image.shape[1],
+                                                                       noisy_image.shape[2], 1)
+        noisy_image = np.squeeze(
+            np.sqrt(noisy_image_real_part ** 2 + noisy_image_imaginary_part ** 2))
+
+        return noisy_image, noisy_image_real_part, noisy_image_imaginary_part
+
+    def preprocess_denoised_image(self, denoised_image_real_part, denoised_image_imaginary_part, count_image):
+        """Preprocess given denoised real and imaginary parts of an image, and build the full denoised image
+
+        Args:
+            denoised_image_real_part (numpy array): real part of a denoised image
+            denoised_image_imaginary_part (numpy array): imaginary part of a denoised image
+            count_image (numpy array): normalisation image used for denormalisation
+
+        Returns:
+            denoised_image, denoised_image_real_part, denoised_image_imaginary_part (numpy array, numpy array, numpy array): 
+            processed denoised full image, processed denoised image real part, processed denoised image imaginary part
+        """
+        denoised_image_real_part = denormalize_sar_image(
+            denoised_image_real_part / count_image)
+        denoised_image_imaginary_part = denormalize_sar_image(
+            denoised_image_imaginary_part / count_image)
+
+        # combine the two estimation
+        output_clean_image = 0.5 * (np.square(
+            denoised_image_real_part) + np.square(denoised_image_imaginary_part))
+
+        denoised_image = np.sqrt(np.squeeze(output_clean_image))
+
+        return denoised_image, denoised_image_real_part, denoised_image_imaginary_part
 
     def denoise_image(self, noisy_image, weights_path, patch_size, stride_size):
         """Preprocess and denoise a coSAR image using given model weights
@@ -126,14 +213,13 @@ class Denoiser(object):
         """
         noisy_image = np.array(noisy_image).reshape(
             1, np.size(noisy_image, 0), np.size(noisy_image, 1), 2)
-        noisy_image_real_part = (noisy_image[:, :, :, 0]).reshape(noisy_image.shape[0], noisy_image.shape[1],
-                                                                  noisy_image.shape[2], 1)
-        noisy_image_imaginary_part = (noisy_image[:, :, :, 1]).reshape(noisy_image.shape[0], noisy_image.shape[1],
-                                                                       noisy_image.shape[2], 1)
 
         # Pad the image
         image_height = np.size(noisy_image, 1)
         image_width = np.size(noisy_image, 2)
+
+        noisy_image, noisy_image_real_part, noisy_image_imaginary_part = self.preprocess_noisy_image(
+            noisy_image)
 
         model = self.load_model(
             weights_path=weights_path, patch_size=patch_size)
@@ -152,36 +238,15 @@ class Denoiser(object):
                 real_to_denoise, imag_to_denoise = self.symetrise_real_and_imaginary_kernel(
                     x, y, noisy_image_real_part, noisy_image_imaginary_part, patch_size)
 
-                tmp_clean_image_real = model.forward(
-                    real_to_denoise).detach().numpy()
-                tmp_clean_image_real = np.moveaxis(tmp_clean_image_real, 1, -1)
+                denoised_image_real_part = self.denoise_image_kernel(
+                    real_to_denoise, denoised_image_real_part, x, y, patch_size, model)
+                denoised_image_imaginary_part = self.denoise_image_kernel(
+                    imag_to_denoise, denoised_image_imaginary_part, x, y, patch_size, model)
+                count_image = self.denoise_image_kernel(
+                    imag_to_denoise, count_image, x, y, patch_size, model, normalisation_kernel=True)
 
-                denoised_image_real_part[:, x:x + patch_size, y:y + patch_size, :] = denoised_image_real_part[:, x:x + patch_size,
-                                                                                                              y:y + patch_size,
-                                                                                                              :] + tmp_clean_image_real
-
-                tmp_clean_image_imag = model.forward(
-                    imag_to_denoise).detach().numpy()
-                tmp_clean_image_imag = np.moveaxis(tmp_clean_image_imag, 1, -1)
-
-                denoised_image_imaginary_part[:, x:x + patch_size, y:y + patch_size, :] = denoised_image_imaginary_part[:, x:x + patch_size,
-                                                                                                                        y:y + patch_size,
-                                                                                                                        :] + tmp_clean_image_imag
-                count_image[:, x:x + patch_size, y:y + patch_size, :] = count_image[:, x:x + patch_size, y:y + patch_size,
-                                                                                    :] + np.ones((1, patch_size, patch_size, 1))
-
-        denoised_image_real_part = denormalize_sar_image(
-            denoised_image_real_part / count_image)
-        denoised_image_imaginary_part = denormalize_sar_image(
-            denoised_image_imaginary_part / count_image)
-
-        # combine the two estimation
-        output_clean_image = 0.5 * (np.square(
-            denoised_image_real_part) + np.square(denoised_image_imaginary_part))
-
-        noisy_image = np.squeeze(
-            np.sqrt(noisy_image_real_part ** 2 + noisy_image_imaginary_part ** 2))
-        denoised_image = np.sqrt(np.squeeze(output_clean_image))
+        denoised_image, denoised_image_real_part, denoised_image_imaginary_part = self.preprocess_denoised_image(
+            denoised_image_real_part, denoised_image_imaginary_part, count_image)
 
         despeckled_image = {"noisy": {"full": noisy_image,
                                       "real": np.squeeze(noisy_image_real_part),
@@ -204,9 +269,6 @@ class Denoiser(object):
             save_dir (str): repository to save sar images, real images and noisy images
             patch_size (int): size of the patch of the convolution
             stride_size (int): number of pixels between one convolution to the next
-
-        Returns:
-            idx_image (numpy array) : last image to be denoised
         """
 
         images_to_denoise_paths = glob((images_to_denoise_path + '/*.npy'))

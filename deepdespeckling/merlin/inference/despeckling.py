@@ -1,12 +1,10 @@
 import logging
 import os
 from glob import glob
-from pathlib import Path
-import numpy as np
 
 from deepdespeckling.merlin.inference.denoiser import Denoiser
 from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
-from deepdespeckling.utils.utils import (crop, crop_fixed, get_info_image, preprocess_and_store_sar_images_from_coordinates, save_image_to_png,
+from deepdespeckling.utils.utils import (crop_image, get_cropping_coordinates, load_sar_image, preprocess_and_store_sar_images_from_coordinates,
                                          create_empty_folder_in_directory, preprocess_and_store_sar_images)
 
 
@@ -46,7 +44,7 @@ def despeckle(sar_images_path, destination_directory_path, model_weights_path=os
 
 def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_directory_path, model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
                                patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE):
-    """Despeckle specified area in coSAR images using trained MERLIN (spotlight or stripmap weights)
+    """Despeckle specified area with coordinates in coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
         sar_images_path (str): path of sar images
@@ -92,43 +90,26 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, model_weigh
     """
 
     logging.info(
-        f"""Despeckling cropped images using {model_weights_path.split("/")[-1]} weights""")
+        f"""Cropping and despeckling images using {model_weights_path.split("/")[-1]} weights""")
 
     processed_images_path = create_empty_folder_in_directory(destination_directory_path=destination_directory_path,
                                                              folder_name="processed_images")
 
     images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
         glob(os.path.join(sar_images_path, "*.npy"))
-    for image_path in images_paths:
-        # FROM IMAGE PATH RETRIEVE PNG, NPY, REAL , IMAG, THRESHOLD, FILENAME
-        image_png, image_data_real, image_data_imag, threshold = get_info_image(
-            image_path, destination_directory_path)
 
-        # CROPPING OUR PNG AND REFLECT THE CROP ON REAL AND IMAG
-        if fixed:
-            print('Fixed mode selected')
-            crop_fixed(image_png, image_data_real, image_data_imag,
-                       destination_directory_path, processed_images_path)
-        else:
-            print('Free mode selected')
-            crop(image_png, image_data_real, image_data_imag,
-                 destination_directory_path, processed_images_path)
+    for i, image_path in enumerate(images_paths):
+        # Load image for cropping
+        image = load_sar_image(image_path)
 
-        image_data_real_cropped = np.load(
-            processed_images_path + '/image_data_real_cropped.npy')
-        os.remove(processed_images_path + '/image_data_real_cropped.npy')
-        image_data_imag_cropped = np.load(
-            processed_images_path + '/image_data_imag_cropped.npy')
-        os.remove(processed_images_path + '/image_data_imag_cropped.npy')
+        # Get cropping coordinates from the first image of the list of images to crop and despeckle
+        if i == 0:
+            cropping_coordinates = get_cropping_coordinates(
+                image=image, fixed=fixed, destination_directory_path=destination_directory_path)
 
-        image_data_real_cropped = image_data_real_cropped.reshape(image_data_real_cropped.shape[0],
-                                                                  image_data_real_cropped.shape[1], 1)
-        image_data_imag_cropped = image_data_imag_cropped.reshape(image_data_imag_cropped.shape[0],
-                                                                  image_data_imag_cropped.shape[1], 1)
-
-        p = Path(image_path)
-        np.save(processed_images_path + '/' + p.stem + '_cropped_to_denoise',
-                np.concatenate((image_data_real_cropped, image_data_imag_cropped), axis=2))
+        # Crop image using stored cropping coordinates and store it in processed_images_path
+        crop_image(image, image_path, cropping_coordinates,
+                   processed_images_path)
 
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing results in {destination_directory_path}")
