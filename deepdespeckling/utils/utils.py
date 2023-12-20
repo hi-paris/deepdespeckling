@@ -346,6 +346,14 @@ def compute_psnr(Shat, S):
 
 
 def get_cropping_coordinates(image, destination_directory_path, model_name, fixed=True):
+    """Launch the crop tool to enable the user to select the subpart of the image to be despeckled
+
+    Args:
+        image (numpy aray): full image to be cropped 
+        destination_directory_path (str): path of a folder to store the results
+        model_name (str): model name to be use for despeckling. Default to "spotlight"
+        fixed (bool, optional): whether the area of selection has a fixed size of not. Defaults to True.
+    """
     image = preprocess_sar_image_for_cropping(image, model_name)
     full_image = image.copy()
     cropping = False
@@ -505,6 +513,7 @@ def crop_image(image, image_path, cropping_coordinates, model_name, processed_im
         image (numpy array): image to be cropped
         image_path (str): path of the image
         cropping_coordinates (list): list of coordinates of cropping, format [(x1, y1), (x2, y2)]
+        model_name (str): name of the model (stripmap, spotlight or sar2sar)
         processed_images_path (str): path of the folder where to store the cropped image in npy format
     """
     if model_name in ["spotlight", "stripmap"]:
@@ -540,6 +549,7 @@ def preprocess_sar_image_for_cropping(image, model_name):
 
     Args:
         image (numpy array): image from which we get cropping coordinates by using the cropping tool
+        model_name (str): name of the model (stripmap, spotlight or sar2sar)
 
     Returns:
         image (cv2 image): image preprocessed for cropping
