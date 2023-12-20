@@ -1,0 +1,163 @@
+import logging
+import torch
+import numpy as np
+from tqdm import tqdm
+from pathlib import Path
+from glob import glob
+
+from deepdespeckling.denoiser import Denoiser
+from deepdespeckling.model import Model
+from deepdespeckling.utils.constants import M, m
+from deepdespeckling.utils.utils import (denormalize_sar_image, denormalize_sar_image_sar2sar, load_sar_image, normalize_sar_image, save_image_to_npy_and_png,
+                                         symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
+
+
+class Sar2SarDenoiser(Denoiser):
+    """Class to share parameters beyond denoising functions
+    """
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+    def load_model(self, weights_path, patch_size):
+        """Load model with given weights 
+
+        Args:
+            weights_path (str): path to weights  
+            patch_size (int): patch size
+
+        Returns:
+            model (Model): model loaded with stored weights
+        """
+        model = Model(torch.device(self.device),
+                      height=patch_size, width=patch_size)
+        model.load_state_dict(torch.load(
+            weights_path, map_location=torch.device("cpu"))['model_state_dict'])
+
+        return model
+
+    def save_despeckled_images(self, despeckled_images, image_name, save_dir):
+        """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
+
+        Args:
+            despeckled_images (dict): dictionary containing noisy and denoised image
+            image_name (str): name of the image
+            save_dir (str): path to the folder where to save the png images
+        """
+        threshold = np.mean(
+            despeckled_images["noisy"]) + 3 * np.std(despeckled_images["noisy"])
+        image_name = image_name.split('\\')[-1]
+
+        for key in despeckled_images:
+            create_empty_folder_in_directory(save_dir, key)
+            save_image_to_npy_and_png(
+                despeckled_images[key], save_dir, f"/{key}/{key}_", image_name, threshold)
+
+    def denoise_image_kernel(self, noisy_image_kernel, denoised_image_kernel, x, y, patch_size, model, normalisation_kernel=False):
+        """Denoise a subpart of a given symetrised noisy image delimited by x, y and patch_size using a given model
+
+        Args:
+            noisy_image_kernel (torch tensor): part of the noisy image to denoise 
+            denoised_image_kernel (numpy array): part of the partially denoised image
+            x (int): x coordinate of current kernel to denoise
+            y (int): y coordinate of current kernel to denoise
+            patch_size (int): patch size
+            model (Model): trained model with loaded weights 
+            normalisation_kernel (bool, optional): Determine if. Defaults to False.
+
+        Returns:
+            denoised_image_kernel (numpy array): image denoised in the given coordinates and the ones already iterated
+        """
+        if not normalisation_kernel:
+
+            with torch.no_grad():
+                if self.device != 'cpu':
+                    tmp_clean_image = model.forward(
+                        noisy_image_kernel).cpu().numpy()
+                else:
+                    tmp_clean_image = model.forward(
+                        noisy_image_kernel).numpy()
+
+            tmp_clean_image = denormalize_sar_image(np.squeeze(
+                np.asarray(tmp_clean_image)))
+
+            denoised_image_kernel[x:x + patch_size, y:y + patch_size] = denoised_image_kernel[x:x +
+                                                                                              patch_size, y:y + patch_size] + tmp_clean_image
+        else:
+            denoised_image_kernel[x:x + patch_size, y:y + patch_size] = denoised_image_kernel[x:x +
+                                                                                              patch_size, y:y + patch_size] + np.ones((patch_size, patch_size))
+
+        return denoised_image_kernel
+
+    def denormalize_sar_image(self, image):
+        """Denormalize a sar image stored in a numpy array
+
+        Args:
+            image (numpy array): a sar image
+
+        Raises:
+            TypeError: raise an error if the image file is not a numpy array
+
+        Returns:
+            (numpy array): the image denormalized
+        """
+        if not isinstance(image, np.ndarray):
+            raise TypeError('Please provide a numpy array')
+        return np.exp((np.clip(np.squeeze(image), 0, image.max()))*(M-m)+m)
+
+    def denoise_image(self, noisy_image, weights_path, patch_size, stride_size):
+        """Preprocess and denoise a coSAR image using given model weights
+
+        Args:
+            noisy_image (numpy array): numpy array containing the noisy image to despeckle 
+            weights_path (str): path to the pth model file
+            patch_size (int): size of the patch of the convolution
+            stride_size (int): number of pixels between one convolution to the next
+
+        Returns:
+            output_image (numpy array): denoised image
+        """
+        noisy_image = np.array(noisy_image).reshape(
+            1, np.size(noisy_image, 0), np.size(noisy_image, 1), 1).astype(np.float32)
+
+        noisy_image = normalize_sar_image(noisy_image)
+
+        noisy_image = torch.tensor(
+            noisy_image, dtype=torch.float)
+
+        # Pad the image
+        image_height = noisy_image.size(dim=1)
+        image_width = noisy_image.size(dim=2)
+
+        model = self.load_model(
+            weights_path=weights_path, patch_size=patch_size)
+
+        count_image = np.zeros((image_height, image_width))
+        denoised_image = np.zeros((image_height, image_width))
+
+        x_range = self.initialize_axis_range(
+            image_height, patch_size, stride_size)
+        y_range = self.initialize_axis_range(
+            image_width, patch_size, stride_size)
+
+        for x in tqdm(x_range):
+            for y in y_range:
+                noisy_image_kernel = noisy_image[:,
+                                                 x:x + patch_size, y:y + patch_size, :]
+                noisy_image_kernel = noisy_image_kernel.to(self.device)
+
+                denoised_image = self.denoise_image_kernel(
+                    noisy_image_kernel, denoised_image, x, y, patch_size, model)
+                count_image = self.denoise_image_kernel(
+                    noisy_image_kernel, count_image, x, y, patch_size, model, normalisation_kernel=True)
+
+        denoised_image = denoised_image / count_image
+
+        noisy_image_denormalized = self.denormalize_sar_image(
+            np.squeeze(np.asarray(noisy_image.cpu().numpy())))
+
+        despeckled_image = {"noisy": noisy_image_denormalized,
+                            "denoised": denoised_image
+                            }
+
+        return despeckled_image
