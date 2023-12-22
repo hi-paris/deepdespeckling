@@ -7,8 +7,7 @@ from glob import glob
 
 from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image_to_npy_and_png,
-                                         symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
+from deepdespeckling.utils.utils import load_sar_image
 
 
 class Denoiser():
@@ -18,7 +17,7 @@ class Denoiser():
     def __init__(self):
         self.device = self.get_device()
 
-    def get_device(self):
+    def get_device(self) -> str:
         """Get torch device to use depending on gpu's availability
 
         Returns:
@@ -34,7 +33,7 @@ class Denoiser():
 
         return device
 
-    def load_model(self, weights_path, patch_size):
+    def load_model(self, weights_path: str, patch_size: int) -> Model:
         """Load model with given weights 
 
         Args:
@@ -51,7 +50,7 @@ class Denoiser():
 
         return model
 
-    def initialize_axis_range(self, image_axis_dim, patch_size, stride_size):
+    def initialize_axis_range(self, image_axis_dim: int, patch_size: int, stride_size: int) -> list:
         """Initialize the convolution range for x or y axis
 
         Args:
@@ -85,7 +84,7 @@ class Denoiser():
     def denoise_image(self):
         raise NotImplementedError
 
-    def denoise_images(self, images_to_denoise_path, weights_path, save_dir, patch_size, stride_size):
+    def denoise_images(self, images_to_denoise_path: list, weights_path: str, save_dir: str, patch_size: int, stride_size: int):
         """Iterate over a directory of coSAR images and store the denoised images in a directory
 
         Args:

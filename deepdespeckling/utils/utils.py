@@ -10,7 +10,7 @@ from deepdespeckling.utils.load_cosar import cos2mat, load_tiff_image
 from deepdespeckling.utils.constants import M, m
 
 
-def normalize_sar_image(image):
+def normalize_sar_image(image: np.array) -> np.array:
     """normalize a sar image store in  a numpy array
 
     Args:
@@ -22,7 +22,7 @@ def normalize_sar_image(image):
     return ((np.log(np.clip(image, 0, image.max())+1e-6)-m)/(M-m)).astype(np.float32)
 
 
-def denormalize_sar_image(image):
+def denormalize_sar_image(image: np.array) -> np.array:
     """Denormalize a sar image store in  a numpy array
 
     Args:
@@ -39,7 +39,7 @@ def denormalize_sar_image(image):
     return np.exp((M - m) * (np.squeeze(image)).astype('float32') + m)
 
 
-def denormalize_sar_image_sar2sar(image):
+def denormalize_sar_image_sar2sar(image: np.array) -> np.array:
     """Denormalize a sar image store i  a numpy array
 
     Args:
@@ -56,7 +56,7 @@ def denormalize_sar_image_sar2sar(image):
     return np.exp((np.clip(np.squeeze(image), 0, image.max()))*(M-m)+m)
 
 
-def load_sar_image(image_path):
+def load_sar_image(image_path: str) -> np.array:
     """Load a SAR image in a numpy array, use cos2mat function if the file is a cos file, 
     load_tiff_image if the file is a tiff file
 
@@ -104,7 +104,7 @@ def load_sar_images(file_list):
     return data
 
 
-def create_empty_folder_in_directory(destination_directory_path, folder_name="processed_images"):
+def create_empty_folder_in_directory(destination_directory_path: str, folder_name: str = "processed_images") -> str:
     """Create an empty folder in a given directory
 
     Args:
@@ -120,7 +120,7 @@ def create_empty_folder_in_directory(destination_directory_path, folder_name="pr
     return processed_images_path
 
 
-def preprocess_and_store_sar_images(sar_images_path, processed_images_path, model_name="spotlight"):
+def preprocess_and_store_sar_images(sar_images_path: str, processed_images_path: str, model_name: str = "spotlight"):
     """Convert coSAR images to numpy arrays and store it in a specified path
 
     Args:
@@ -138,7 +138,7 @@ def preprocess_and_store_sar_images(sar_images_path, processed_images_path, mode
             np.save(processed_images_path + '/' + imagename + '.npy', image)
 
 
-def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_images_path, coordinates_dict, model_name="spotlight"):
+def preprocess_and_store_sar_images_from_coordinates(sar_images_path: str, processed_images_path: str, coordinates_dict: dict, model_name: str = "spotlight"):
     """Convert specified areas of coSAR images to numpy arrays and store it in a specified path
 
     Args:
@@ -168,7 +168,7 @@ def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_
                         '.npy', image[x_start:x_end, y_start:y_end])
 
 
-def get_maximum_patch_size(kernel_size, patch_bound):
+def get_maximum_patch_size(kernel_size: int, patch_bound: int) -> int:
     """Get maximum manifold of a number lower than a bound
 
     Args:
@@ -188,7 +188,7 @@ def get_maximum_patch_size(kernel_size, patch_bound):
     return maximum_patch_size
 
 
-def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
+def get_maximum_patch_size_from_image_dimensions(kernel_size: int, height: int, width: int) -> int:
     """Get the maximum patch size from the width and heigth and the kernel size of the model we use
 
     Args:
@@ -210,7 +210,7 @@ def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
     return maximum_patch_size
 
 
-def symetrise_real_and_imaginary_parts(real_part, imag_part):
+def symetrise_real_and_imaginary_parts(real_part: np.array, imag_part: np.array) -> (np.array, np.array):
     """Symetrise given real and imaginary parts to ensure MERLIN properties
 
     Args:
@@ -276,12 +276,12 @@ def symetrise_real_and_imaginary_parts(real_part, imag_part):
     return np.real(ima2), np.imag(ima2)
 
 
-def preprocess_image(image, threshold):
+def preprocess_image(image: np.array, threshold: float) -> np.array:
     """Preprocess image by limiting pixel values with a threshold
 
     Args:
         image (numpy array): image to preprocess
-        threshold (int): pixel value threshold 
+        threshold (float): pixel value threshold 
 
     Returns:
         image (cv2 Image): image to be saved
@@ -293,7 +293,7 @@ def preprocess_image(image, threshold):
     return image
 
 
-def save_image_to_png(image, threshold, image_full_path):
+def save_image_to_png(image: np.array, threshold: int, image_full_path: str):
     """Save a given image to a png file in a given folder
 
     Args:
@@ -311,7 +311,7 @@ def save_image_to_png(image, threshold, image_full_path):
     image.save(image_full_path.replace('npy', 'png'))
 
 
-def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
+def save_image_to_npy_and_png(image: np.array, save_dir: str, prefix: str, image_name: str, threshold: float):
     """Save a given image to npy and png in a given folder
 
     Args:
@@ -330,7 +330,7 @@ def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
     save_image_to_png(image, threshold, image_full_path)
 
 
-def compute_psnr(Shat, S):
+def compute_psnr(Shat: np.array, S: np.array) -> float:
     """Compute Peak Signal to Noise Ratio
 
     Args:
@@ -345,7 +345,7 @@ def compute_psnr(Shat, S):
     return res
 
 
-def get_cropping_coordinates(image, destination_directory_path, model_name, fixed=True):
+def get_cropping_coordinates(image: np.array, destination_directory_path: str, model_name: str, fixed: bool = True):
     """Launch the crop tool to enable the user to select the subpart of the image to be despeckled
 
     Args:
@@ -485,7 +485,7 @@ def get_cropping_coordinates(image, destination_directory_path, model_name, fixe
             return get_cropping_coordinates_from_file(destination_directory_path=destination_directory_path)
 
 
-def get_cropping_coordinates_from_file(destination_directory_path):
+def get_cropping_coordinates_from_file(destination_directory_path: str) -> list:
     """Get cropping coordinates from a file where it's stored
 
     Args:
@@ -506,7 +506,7 @@ def get_cropping_coordinates_from_file(destination_directory_path):
     return cropping_coordinates
 
 
-def crop_image(image, image_path, cropping_coordinates, model_name, processed_images_path):
+def crop_image(image: np.array, image_path: str, cropping_coordinates: list, model_name: str, processed_images_path: str):
     """Crop an image using given cropping coordinates and store the result in a given folder
 
     Args:
@@ -544,7 +544,7 @@ def crop_image(image, image_path, cropping_coordinates, model_name, processed_im
             '_cropped_to_denoise', cropped_image)
 
 
-def preprocess_sar_image_for_cropping(image, model_name):
+def preprocess_sar_image_for_cropping(image: np.array, model_name: str) -> np.array:
     """Preprocess image to use the cropping tool
 
     Args:

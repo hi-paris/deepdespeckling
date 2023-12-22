@@ -6,8 +6,9 @@ from pathlib import Path
 from glob import glob
 
 from deepdespeckling.denoiser import Denoiser
+from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image_to_npy_and_png,
+from deepdespeckling.utils.utils import (denormalize_sar_image, save_image_to_npy_and_png,
                                          symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
 
 
@@ -18,7 +19,7 @@ class MerlinDenoiser(Denoiser):
     def __init__(self, **params):
         super().__init__(**params)
 
-    def save_despeckled_images(self, despeckled_images, image_name, save_dir):
+    def save_despeckled_images(self, despeckled_images: dict, image_name: str, save_dir: str):
         """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
 
         Args:
@@ -36,7 +37,7 @@ class MerlinDenoiser(Denoiser):
                 save_image_to_npy_and_png(
                     despeckled_images[key][key2], save_dir, f"/{key}/{key}_{key2}_", image_name, threshold)
 
-    def symetrise_real_and_imaginary_kernel(self, x, y, i_real_part, i_imag_part, patch_size):
+    def symetrise_real_and_imaginary_kernel(self, x: int, y: int, i_real_part: np.array, i_imag_part: np.array, patch_size: int) -> (torch.tensor, torch.tensor):
         """ Get subpart of an image to denoise delimited by x and y as an imaginary and a real part, 
         symetrise it so that the noises are independant in each part,
         normalize it and return it as torch tensors
@@ -66,7 +67,7 @@ class MerlinDenoiser(Denoiser):
 
         return real_to_denoise, imag_to_denoise
 
-    def denoise_image_kernel(self, symetrised_noisy_image, symetrised_denoised_image, x, y, patch_size, model, normalisation_kernel=False):
+    def denoise_image_kernel(self, symetrised_noisy_image: torch.tensor, symetrised_denoised_image: np.array, x: int, y: int, patch_size: int, model: Model, normalisation_kernel: bool = False) -> np.array:
         """Denoise a subpart of a given symetrised noisy image delimited by x, y and patch_size using a given model
 
         Args:
@@ -100,7 +101,7 @@ class MerlinDenoiser(Denoiser):
                                                                                                             :] + np.ones((1, patch_size, patch_size, 1))
         return symetrised_denoised_image
 
-    def preprocess_noisy_image(self, noisy_image):
+    def preprocess_noisy_image(self, noisy_image: np.array) -> (np.array, np.array, np.array):
         """preprocess a given noisy image and generates its real and imaginary parts
 
         Args:
@@ -119,7 +120,7 @@ class MerlinDenoiser(Denoiser):
 
         return noisy_image, noisy_image_real_part, noisy_image_imaginary_part
 
-    def preprocess_denoised_image(self, denoised_image_real_part, denoised_image_imaginary_part, count_image):
+    def preprocess_denoised_image(self, denoised_image_real_part: np.array, denoised_image_imaginary_part: np.array, count_image: np.array) -> (np.array, np.array, np.array):
         """Preprocess given denoised real and imaginary parts of an image, and build the full denoised image
 
         Args:
@@ -144,7 +145,7 @@ class MerlinDenoiser(Denoiser):
 
         return denoised_image, denoised_image_real_part, denoised_image_imaginary_part
 
-    def denoise_image(self, noisy_image, weights_path, patch_size, stride_size):
+    def denoise_image(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int) -> dict:
         """Preprocess and denoise a coSAR image using given model weights
 
         Args:
@@ -154,7 +155,7 @@ class MerlinDenoiser(Denoiser):
             stride_size (int): number of pixels between one convolution to the next
 
         Returns:
-            output_image (numpy array): denoised image
+            despeckled_image (dict): noisy and denoised images
         """
         noisy_image = np.array(noisy_image).reshape(
             1, np.size(noisy_image, 0), np.size(noisy_image, 1), 2)

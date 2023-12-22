@@ -3,7 +3,7 @@ from osgeo import gdal
 import numpy as np
 
 
-def cos2mat(path_to_cosar_image):
+def cos2mat(path_to_cosar_image: str) -> np.array:
     """Convert a CoSAR imge to a numpy array of size [ncolumns,nlines,2]
 
     Args:
@@ -59,7 +59,7 @@ def cos2mat(path_to_cosar_image):
     return np.stack((np.real(imgcxs), np.imag(imgcxs)), axis=2)
 
 
-def load_tiff_image(path_to_tiff_image):
+def load_tiff_image(path_to_tiff_image: str) -> np.array:
     """Load a tiff image in a numpy array using gdal library
 
     Args:

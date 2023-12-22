@@ -8,8 +8,8 @@ from glob import glob
 from deepdespeckling.denoiser import Denoiser
 from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, denormalize_sar_image_sar2sar, load_sar_image, normalize_sar_image, save_image_to_npy_and_png,
-                                         symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
+from deepdespeckling.utils.utils import (denormalize_sar_image, normalize_sar_image, save_image_to_npy_and_png,
+                                         create_empty_folder_in_directory)
 
 
 class Sar2SarDenoiser(Denoiser):
@@ -19,7 +19,7 @@ class Sar2SarDenoiser(Denoiser):
     def __init__(self, **params):
         super().__init__(**params)
 
-    def load_model(self, weights_path, patch_size):
+    def load_model(self, weights_path: str, patch_size: int) -> Model:
         """Load model with given weights 
 
         Args:
@@ -36,7 +36,7 @@ class Sar2SarDenoiser(Denoiser):
 
         return model
 
-    def save_despeckled_images(self, despeckled_images, image_name, save_dir):
+    def save_despeckled_images(self, despeckled_images: dict, image_name: str, save_dir: str):
         """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
 
         Args:
@@ -53,7 +53,7 @@ class Sar2SarDenoiser(Denoiser):
             save_image_to_npy_and_png(
                 despeckled_images[key], save_dir, f"/{key}/{key}_", image_name, threshold)
 
-    def denoise_image_kernel(self, noisy_image_kernel, denoised_image_kernel, x, y, patch_size, model, normalisation_kernel=False):
+    def denoise_image_kernel(self, noisy_image_kernel: torch.tensor, denoised_image_kernel: np.array, x: int, y: int, patch_size: int, model: Model, normalisation_kernel: bool = False) -> np.array:
         """Denoise a subpart of a given symetrised noisy image delimited by x, y and patch_size using a given model
 
         Args:
@@ -89,7 +89,7 @@ class Sar2SarDenoiser(Denoiser):
 
         return denoised_image_kernel
 
-    def denormalize_sar_image(self, image):
+    def denormalize_sar_image(self, image: np.array) -> np.array:
         """Denormalize a sar image stored in a numpy array
 
         Args:
@@ -105,7 +105,7 @@ class Sar2SarDenoiser(Denoiser):
             raise TypeError('Please provide a numpy array')
         return np.exp((np.clip(np.squeeze(image), 0, image.max()))*(M-m)+m)
 
-    def denoise_image(self, noisy_image, weights_path, patch_size, stride_size):
+    def denoise_image(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int) -> dict:
         """Preprocess and denoise a coSAR image using given model weights
 
         Args:

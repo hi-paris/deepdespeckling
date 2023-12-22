@@ -1,6 +1,7 @@
 import logging
 import os
 from glob import glob
+from deepdespeckling.denoiser import Denoiser
 
 from deepdespeckling.merlin.inference.merlin_denoiser import MerlinDenoiser
 from deepdespeckling.sar2sar.sar2sar_denoiser import Sar2SarDenoiser
@@ -13,7 +14,7 @@ this_dir, this_filename = os.path.split(__file__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_model_weights_path(model_name):
+def get_model_weights_path(model_name: str) -> str:
     """Get model weights path from model name
 
     Args:
@@ -38,7 +39,7 @@ def get_model_weights_path(model_name):
     return model_weights_path
 
 
-def get_denoiser(model_name):
+def get_denoiser(model_name: str) -> Denoiser:
     """Get the right denoiser object from the model name
 
     Args:
@@ -57,7 +58,7 @@ def get_denoiser(model_name):
     return denoiser
 
 
-def despeckle(sar_images_path, destination_directory_path, model_name="spotlight", patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE):
+def despeckle(sar_images_path: str, destination_directory_path: str, model_name: str = "spotlight", patch_size: int = PATCH_SIZE, stride_size: int = STRIDE_SIZE):
     """Despeckle coSAR images using trained MERLIN (spotlight or stripmap weights) or SAR2SAR
 
     Args:
@@ -67,9 +68,6 @@ def despeckle(sar_images_path, destination_directory_path, model_name="spotlight
         stride_size (int): stride size. Defaults to constant STRIDE_SIZE.
         model_name (str): model name, either "spotlight" or "stripmap" to select MERLIN model on the 
             right cosar image format or "sar2sar" for SAR2SAR model. Default to "spotlight"
-
-    Returns:
-        denoised_image (npy): denoised image in a numpy array (last image contained in sar_images_path)
     """
 
     logging.info(
@@ -90,8 +88,8 @@ def despeckle(sar_images_path, destination_directory_path, model_name="spotlight
                             patch_size=patch_size, stride_size=stride_size)
 
 
-def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_directory_path, model_name="spotlight",
-                               patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE):
+def despeckle_from_coordinates(sar_images_path: str, coordinates_dict: dict, destination_directory_path: str, model_name: str = "spotlight",
+                               patch_size: int = PATCH_SIZE, stride_size: int = STRIDE_SIZE):
     """Despeckle specified area with coordinates in coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
@@ -102,9 +100,6 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
         stride_size (int): stride size. Defaults to constant STRIDE_SIZE.
         model_name (str): model name, either "spotlight" or "stripmap" to select MERLIN model on the 
             right cosar image format or "sar2sar" for SAR2SAR model. Default to "spotlight"
-
-    Returns:
-       denoised_image (npy): denoised specified area in image stored in a numpy array (last image contained in sar_images_path)
     """
 
     logging.info(
@@ -125,8 +120,8 @@ def despeckle_from_coordinates(sar_images_path, coordinates_dict, destination_di
                             patch_size=patch_size, stride_size=stride_size)
 
 
-def despeckle_from_crop(sar_images_path, destination_directory_path, model_name="spotlight", patch_size=PATCH_SIZE,
-                        stride_size=STRIDE_SIZE, fixed=True):
+def despeckle_from_crop(sar_images_path: str, destination_directory_path: str, model_name: str = "spotlight", patch_size: int = PATCH_SIZE,
+                        stride_size: int = STRIDE_SIZE, fixed: bool = True):
     """Despeckle specified area with an integrated cropping tool (made with OpenCV) in coSAR images using trained MERLIN (spotlight or stripmap weights)
 
     Args:
@@ -137,9 +132,6 @@ def despeckle_from_crop(sar_images_path, destination_directory_path, model_name=
         model_name (str): model name, either "spotlight" or "stripmap" to select MERLIN model on the 
             right cosar image format or "sar2sar" for SAR2SAR model. Default to "spotlight"
         fixed (bool) : If True, crop size is limited to 256*256. Defaults to True
-
-    Returns:
-       denoised_image (npy): denoised specified area in image stored in a numpy array (last image contained in sar_images_path)
     """
 
     logging.info(

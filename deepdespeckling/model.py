@@ -1,9 +1,10 @@
 import torch
+import numpy as np
 
 
 class Model(torch.nn.Module):
 
-    def __init__(self, device, height, width):
+    def __init__(self, device: str, height: int, width: int):
         super().__init__()
 
         self.device = device
@@ -54,7 +55,7 @@ class Model(torch.nn.Module):
 
         self.upscale2d = torch.nn.UpsamplingNearest2d(scale_factor=2)
 
-    def forward(self, x):
+    def forward(self, x: np.array) -> np.array:
         """  Defines a class for an autoencoder algorithm for an object (image) x
 
         An autoencoder is a specific type of feedforward neural networks where the
