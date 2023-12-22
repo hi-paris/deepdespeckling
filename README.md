@@ -20,56 +20,86 @@ pip install deepdespeckling
 
 ## Authors
 
-
-* [Emanuele Dalsasso](https://perso.telecom-paristech.fr/dalsasso/) (Researcher at Telecom Paris)
-* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Hi! PARIS Machine Learning Research Engineer)
-* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Hi! PARIS Engineer)
+* [Emanuele Dalsasso](https://emanueledalsasso.github.io/) (Researcher at ECEO, EPFL)
 * [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Machine Learning Research Engineer)
+
+## Former contributors 
+
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Former Hi! PARIS Machine Learning Research Engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Former Hi! PARIS Engineer)
 
 
 ## Examples
 
-The package offers you 3 different methods for despeckling your SAR images: the fullsize method, the coordinates based method and the crop method.
+Deepdespeckling offers 2 differents methods or despeckling SAR images: 
 
-### Despeckle fullsize images
+* [MERLIN] (https://arxiv.org/pdf/2110.13148.pdf)
+* [SAR2SAR] (https://arxiv.org/pdf/2006.15037.pdf)
+
+### Despeckle one image
 
 ```python
-from deepdespeckling.merlin.inference.despeckling import despeckle
+from deepdespeckling.utils.load_cosar import cos2mat
+from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
+from deepdespeckling.despeckling import get_model_weights_path, get_denoiser
+
+# Path to one image (cos, tiff or npy file, depending on the model you want to use), can also be a folder of several images
+image_path="path/to/cosar/image"
+# Model name, can be "spotlight", "stripmap" or "sar2sar"
+model_name = "spotlight"
+
+image = cos2mat(image_path).astype(np.float32)
+# Get the right model
+denoiser = get_denoiser(model_name=model_name)
+model_weights_path = get_model_weights_path(model_name=model_name)
+
+denoised_image = denoiser.denoise_image(
+                image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
+```
+
+### Despeckle a set of images
+
+For each of this method, you can choose between 3 different functions to despeckle a set of SAR images contained in a folder : 
+
+* `despeckle()` to despeckle full size images
+* `despeckle_from_coordinates()` to despeckle a sub-part of the images defined by some coordinates
+* `despeckle_from_crop()` to despeckle a sub-part of the images defined using a crop tool
+
+#### Despeckle fullsize images
+
+```python
+from deepdespeckling.despeckling import despeckle
 
 # Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights (pth file)
-model_weights_path="path/to/model/weights"
 
-denoised_image = despeckle(image_path, destination_directory, model_weights_path=model_weights_path)
+denoised_image = despeckle(image_path, destination_directory, model_name="spotlight")
 ```
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
 ![](img/entire/noisy.png)  |  ![](img/entire/denoised.png)
 
-### Despeckle parts of images using custom coordinates
+#### Despeckle parts of images using custom coordinates
 
 ```python
-from deepdespeckling.merlin.inference.despeckling import despeckle_from_coordinates
+from deepdespeckling.despeckling import despeckle_from_coordinates
 
 # Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights (pth file)
-model_weights_path="path/to/model/weights"
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
-denoised_image = despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_weights_path)
+denoised_image = despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_name="spotlight")
 ```
 
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
 ![](img/coordinates/noisy_test_image_data.png)  |  ![](img/coordinates/denoised_test_image_data.png)
 
-### Despeckle parts of images using a crop tool
+#### Despeckle parts of images using a crop tool
 
 ```python
 from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
@@ -78,11 +108,9 @@ from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Path to the model weights (pth file)
-model_weights_path="path/to/model/weights"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
-denoised_image = despeckle_from_crop(image_path, destination_directory, model_weights_path, fixed=False)
+denoised_image = despeckle_from_crop(image_path, destination_directory, model_name="spotlight", fixed=False)
 ```
 
 * The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
@@ -144,10 +172,6 @@ model=create_model(Model, batch_size=12, val_batch_size=1, device=torch.device("
 fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
 ```
 
-# Contribute
-
-- Source Code: https://github.com/hi-paris/deepdespeckling.git
-
 # License
 
 * Free software: MIT
@@ -159,3 +183,5 @@ fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory,
 # References
 
 [1] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. [As if by magic: self-supervised training of deep despeckling networks with MERLIN](https://arxiv.org/pdf/2110.13148.pdf). IEEE Transactions on Geoscience and Remote Sensing, 2021, vol. 60, p. 1-13.
+
+[2] DALSASSO, Emanuele, DENIS, Loïc, et TUPIN, Florence. [SAR2SAR: a semi-supervised despeckling algorithm for SAR images](https://arxiv.org/pdf/2006.15037.pdf). IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing (Early Access), 2020

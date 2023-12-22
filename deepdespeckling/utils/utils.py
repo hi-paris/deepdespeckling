@@ -6,12 +6,24 @@ from scipy import signal
 from pathlib import Path
 from glob import glob
 
-from deepdespeckling.merlin.inference.load_cosar import cos2mat
+from deepdespeckling.utils.load_cosar import cos2mat, load_tiff_image
 from deepdespeckling.utils.constants import M, m
 
 
-def denormalize_sar_image(image):
-    """Denormalize a sar image store i  a numpy array
+def normalize_sar_image(image: np.array) -> np.array:
+    """normalize a sar image store in  a numpy array
+
+    Args:
+        image (numpy array): the image to be normalized
+
+    Returns:
+        (numpy array): normalized image
+    """
+    return ((np.log(np.clip(image, 0, image.max())+1e-6)-m)/(M-m)).astype(np.float32)
+
+
+def denormalize_sar_image(image: np.array) -> np.array:
+    """Denormalize a sar image store in  a numpy array
 
     Args:
         image (numpy array): a sar image
@@ -27,8 +39,26 @@ def denormalize_sar_image(image):
     return np.exp((M - m) * (np.squeeze(image)).astype('float32') + m)
 
 
-def load_sar_image(image_path):
-    """Load a SAR image in a numpy array, use cos2mat function if the file is a cos file
+def denormalize_sar_image_sar2sar(image: np.array) -> np.array:
+    """Denormalize a sar image store i  a numpy array
+
+    Args:
+        image (numpy array): a sar image
+
+    Raises:
+        TypeError: raise an error if the image file is not a numpy array
+
+    Returns:
+        (numpy array): the image denormalized
+    """
+    if not isinstance(image, np.ndarray):
+        raise TypeError('Please provide a numpy array')
+    return np.exp((np.clip(np.squeeze(image), 0, image.max()))*(M-m)+m)
+
+
+def load_sar_image(image_path: str) -> np.array:
+    """Load a SAR image in a numpy array, use cos2mat function if the file is a cos file, 
+    load_tiff_image if the file is a tiff file
 
     Args:
         image_path (str) : absolute path to a SAR image (cos or npy file)
@@ -40,8 +70,10 @@ def load_sar_image(image_path):
         image = np.load(image_path)
     elif Path(image_path).suffix == ".cos":
         image = cos2mat(image_path)
+    elif Path(image_path).suffix == ".tiff":
+        image = load_tiff_image(image_path)
     else:
-        raise ValueError("the image should be a cos or a npy file")
+        raise ValueError("the image should be a cos, npy or tiff file")
     return image
 
 
@@ -72,7 +104,7 @@ def load_sar_images(file_list):
     return data
 
 
-def create_empty_folder_in_directory(destination_directory_path, folder_name="processed_images"):
+def create_empty_folder_in_directory(destination_directory_path: str, folder_name: str = "processed_images") -> str:
     """Create an empty folder in a given directory
 
     Args:
@@ -88,15 +120,17 @@ def create_empty_folder_in_directory(destination_directory_path, folder_name="pr
     return processed_images_path
 
 
-def preprocess_and_store_sar_images(sar_images_path, processed_images_path):
+def preprocess_and_store_sar_images(sar_images_path: str, processed_images_path: str, model_name: str = "spotlight"):
     """Convert coSAR images to numpy arrays and store it in a specified path
 
     Args:
         sar_images_path (str): path of a folder containing coSAR images to be converted in numpy array
         processed_images_path (str): path of the folder where converted images are stored
+        model_name (str): model name to be use for despeckling 
     """
-    images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
-        glob(os.path.join(sar_images_path, "*.npy"))
+    ext = "cos" if model_name in ["spotlight", "stripmap"] else "tiff"
+    images_paths = glob(os.path.join(sar_images_path, "*.npy")) + \
+        glob(os.path.join(sar_images_path, f"*.{ext}"))
     for image_path in images_paths:
         imagename = image_path.split('/')[-1].split('.')[0]
         if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
@@ -104,30 +138,37 @@ def preprocess_and_store_sar_images(sar_images_path, processed_images_path):
             np.save(processed_images_path + '/' + imagename + '.npy', image)
 
 
-def preprocess_and_store_sar_images_from_coordinates(sar_images_path, processed_images_path, coordinates_dict):
+def preprocess_and_store_sar_images_from_coordinates(sar_images_path: str, processed_images_path: str, coordinates_dict: dict, model_name: str = "spotlight"):
     """Convert specified areas of coSAR images to numpy arrays and store it in a specified path
 
     Args:
         sar_images_path (str): path of a folder containing coSAR images to be converted in numpy array
         processed_images_path (str): path of the folder where converted images are stored
         coordinates_dict (dict): dictionary containing pixel boundaries of the area to despeckle (x_start, x_end, y_start, y_end)
+        model_name (str): model name to be use for despeckling. Default to "spotlight"
     """
     x_start = coordinates_dict["x_start"]
     x_end = coordinates_dict["x_end"]
     y_start = coordinates_dict["y_start"]
     y_end = coordinates_dict["y_end"]
 
-    images_paths = glob(os.path.join(sar_images_path, "*.cos")) + \
-        glob(os.path.join(sar_images_path, "*.npy"))
+    ext = "cos" if model_name in ["spotlight", "stripmap"] else "tiff"
+
+    images_paths = glob(os.path.join(sar_images_path, "*.npy")) + \
+        glob(os.path.join(sar_images_path, f"*.{ext}"))
     for image_path in images_paths:
         imagename = image_path.split('/')[-1].split('.')[0]
         if not os.path.exists(processed_images_path + '/' + imagename + '.npy'):
             image = load_sar_image(image_path)
-            np.save(processed_images_path + '/' + imagename +
-                    '.npy', image[x_start:x_end, y_start:y_end, :])
+            if ext == "cos":
+                np.save(processed_images_path + '/' + imagename +
+                        '.npy', image[x_start:x_end, y_start:y_end, :])
+            else:
+                np.save(processed_images_path + '/' + imagename +
+                        '.npy', image[x_start:x_end, y_start:y_end])
 
 
-def get_maximum_patch_size(kernel_size, patch_bound):
+def get_maximum_patch_size(kernel_size: int, patch_bound: int) -> int:
     """Get maximum manifold of a number lower than a bound
 
     Args:
@@ -147,7 +188,7 @@ def get_maximum_patch_size(kernel_size, patch_bound):
     return maximum_patch_size
 
 
-def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
+def get_maximum_patch_size_from_image_dimensions(kernel_size: int, height: int, width: int) -> int:
     """Get the maximum patch size from the width and heigth and the kernel size of the model we use
 
     Args:
@@ -169,7 +210,7 @@ def get_maximum_patch_size_from_image_dimensions(kernel_size, height, width):
     return maximum_patch_size
 
 
-def symetrise_real_and_imaginary_parts(real_part, imag_part):
+def symetrise_real_and_imaginary_parts(real_part: np.array, imag_part: np.array) -> (np.array, np.array):
     """Symetrise given real and imaginary parts to ensure MERLIN properties
 
     Args:
@@ -235,12 +276,12 @@ def symetrise_real_and_imaginary_parts(real_part, imag_part):
     return np.real(ima2), np.imag(ima2)
 
 
-def preprocess_image(image, threshold):
+def preprocess_image(image: np.array, threshold: float) -> np.array:
     """Preprocess image by limiting pixel values with a threshold
 
     Args:
         image (numpy array): image to preprocess
-        threshold (int): pixel value threshold 
+        threshold (float): pixel value threshold 
 
     Returns:
         image (cv2 Image): image to be saved
@@ -252,7 +293,7 @@ def preprocess_image(image, threshold):
     return image
 
 
-def save_image_to_png(image, threshold, image_full_path):
+def save_image_to_png(image: np.array, threshold: int, image_full_path: str):
     """Save a given image to a png file in a given folder
 
     Args:
@@ -270,7 +311,7 @@ def save_image_to_png(image, threshold, image_full_path):
     image.save(image_full_path.replace('npy', 'png'))
 
 
-def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
+def save_image_to_npy_and_png(image: np.array, save_dir: str, prefix: str, image_name: str, threshold: float):
     """Save a given image to npy and png in a given folder
 
     Args:
@@ -289,7 +330,7 @@ def save_image_to_npy_and_png(image, save_dir, prefix, image_name, threshold):
     save_image_to_png(image, threshold, image_full_path)
 
 
-def compute_psnr(Shat, S):
+def compute_psnr(Shat: np.array, S: np.array) -> float:
     """Compute Peak Signal to Noise Ratio
 
     Args:
@@ -304,8 +345,16 @@ def compute_psnr(Shat, S):
     return res
 
 
-def get_cropping_coordinates(image, destination_directory_path, fixed=True):
-    image = preprocess_sar_image_for_cropping(image)
+def get_cropping_coordinates(image: np.array, destination_directory_path: str, model_name: str, fixed: bool = True):
+    """Launch the crop tool to enable the user to select the subpart of the image to be despeckled
+
+    Args:
+        image (numpy aray): full image to be cropped 
+        destination_directory_path (str): path of a folder to store the results
+        model_name (str): model name to be use for despeckling. Default to "spotlight"
+        fixed (bool, optional): whether the area of selection has a fixed size of not. Defaults to True.
+    """
+    image = preprocess_sar_image_for_cropping(image, model_name)
     full_image = image.copy()
     cropping = False
     x_start, y_start, x_end, y_end = 0, 0, 0, 0
@@ -436,7 +485,7 @@ def get_cropping_coordinates(image, destination_directory_path, fixed=True):
             return get_cropping_coordinates_from_file(destination_directory_path=destination_directory_path)
 
 
-def get_cropping_coordinates_from_file(destination_directory_path):
+def get_cropping_coordinates_from_file(destination_directory_path: str) -> list:
     """Get cropping coordinates from a file where it's stored
 
     Args:
@@ -457,50 +506,60 @@ def get_cropping_coordinates_from_file(destination_directory_path):
     return cropping_coordinates
 
 
-def crop_image(image, image_path, cropping_coordinates, processed_images_path):
+def crop_image(image: np.array, image_path: str, cropping_coordinates: list, model_name: str, processed_images_path: str):
     """Crop an image using given cropping coordinates and store the result in a given folder
 
     Args:
         image (numpy array): image to be cropped
         image_path (str): path of the image
         cropping_coordinates (list): list of coordinates of cropping, format [(x1, y1), (x2, y2)]
+        model_name (str): name of the model (stripmap, spotlight or sar2sar)
         processed_images_path (str): path of the folder where to store the cropped image in npy format
     """
-    image_real_part = image[:, :, 0]
-    image_imaginary_part = image[:, :, 1]
+    if model_name in ["spotlight", "stripmap"]:
+        image_real_part = image[:, :, 0]
+        image_imaginary_part = image[:, :, 1]
 
-    cropped_image_real_part = image_real_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
-                                              cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
-    cropped_image_imaginary_part = image_imaginary_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
-                                                        cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
+        cropped_image_real_part = image_real_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
+                                                  cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
+        cropped_image_imaginary_part = image_imaginary_part[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
+                                                            cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
 
-    cropped_image_real_part = cropped_image_real_part.reshape(cropped_image_real_part.shape[0],
-                                                              cropped_image_real_part.shape[1], 1)
-    cropped_image_imaginary_part = cropped_image_imaginary_part.reshape(cropped_image_imaginary_part.shape[0],
-                                                                        cropped_image_imaginary_part.shape[1], 1)
+        cropped_image_real_part = cropped_image_real_part.reshape(cropped_image_real_part.shape[0],
+                                                                  cropped_image_real_part.shape[1], 1)
+        cropped_image_imaginary_part = cropped_image_imaginary_part.reshape(cropped_image_imaginary_part.shape[0],
+                                                                            cropped_image_imaginary_part.shape[1], 1)
 
-    cropped_image = np.concatenate(
-        (cropped_image_real_part, cropped_image_imaginary_part), axis=2)
+        cropped_image = np.concatenate(
+            (cropped_image_real_part, cropped_image_imaginary_part), axis=2)
+    else:
+        cropped_image = image[cropping_coordinates[0][1] * 8:cropping_coordinates[1][1] * 8,
+                              cropping_coordinates[0][0] * 8:cropping_coordinates[1][0] * 8]
+
+        cropped_image = cropped_image.reshape(
+            cropped_image.shape[0], cropped_image.shape[1], 1)
 
     image_path_name = Path(image_path)
     np.save(processed_images_path + '/' + image_path_name.stem +
             '_cropped_to_denoise', cropped_image)
 
 
-def preprocess_sar_image_for_cropping(image):
+def preprocess_sar_image_for_cropping(image: np.array, model_name: str) -> np.array:
     """Preprocess image to use the cropping tool
 
     Args:
         image (numpy array): image from which we get cropping coordinates by using the cropping tool
+        model_name (str): name of the model (stripmap, spotlight or sar2sar)
 
     Returns:
         image (cv2 image): image preprocessed for cropping
     """
-    image_data_real = image[:, :, 0]
-    image_data_imag = image[:, :, 1]
+    if model_name in ["spotlight", "stripmap"]:
+        image_data_real = image[:, :, 0]
+        image_data_imag = image[:, :, 1]
+        image = np.squeeze(
+            np.sqrt(np.square(image_data_real) + np.square(image_data_imag)))
 
-    image = np.squeeze(
-        np.sqrt(np.square(image_data_real) + np.square(image_data_imag)))
     threshold = np.mean(image) + 3 * np.std(image)
 
     image = np.clip(image, 0, threshold)

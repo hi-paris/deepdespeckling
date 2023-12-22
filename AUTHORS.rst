@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* youcef kemiche <y.kemiche06@hotmail.com>
+* Hadrien Mariaccia <hadrienmariaccia@gmail.com>
 
 Contributors
 ------------
