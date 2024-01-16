@@ -4,15 +4,12 @@
 
 from setuptools import setup, find_packages
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 requirements = []
-test_requirements = [ ]
+test_requirements = []
 
 setup(
-    author="Emanuele Dalsasso, Youcef Kemiche, Pierre Blanchard",
-    author_email='y.kemiche06@hotmail.com',
+    author="Emanuele Dalsasso, Youcef Kemiche, Pierre Blanchard, Hadrien Mariaccia",
+    author_email='engineer@hi-paris.fr',
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -29,6 +26,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
     entry_points={
@@ -36,7 +34,8 @@ setup(
             'deepdespeckling=deepdespeckling.cli:main',
         ],
     },
-    install_requires=["numpy","Pillow","scipy","torch","opencv-python","tqdm"],
+    install_requires=["numpy", "Pillow", "scipy",
+                      "torch", "opencv-python", "tqdm", "GDAL==3.8.1"],
     license="MIT license",
     include_package_data=True,
     keywords='deepdespeckling',
@@ -44,7 +43,7 @@ setup(
     packages=find_packages(include=['deepdespeckling', 'deepdespeckling.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/ykemiche/deepdespeckling',
-    version='0.1.0',
+    url='https://github.com/hi-paris/deepdespeckling',
+    version='0.2.0',
     zip_safe=False,
 )
