@@ -31,7 +31,7 @@ pip install deepdespeckling
 
 ## Examples
 
-Deepdespeckling offers 2 differents methods or despeckling SAR images: 
+Deepdespeckling offers 2 differents methods to despeckle SAR images: 
 
 * [MERLIN] (https://arxiv.org/pdf/2110.13148.pdf)
 * [SAR2SAR] (https://arxiv.org/pdf/2006.15037.pdf)
