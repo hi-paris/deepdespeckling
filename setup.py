@@ -35,7 +35,7 @@ setup(
         ],
     },
     install_requires=["numpy", "Pillow", "scipy",
-                      "torch", "opencv-python", "tqdm", "GDAL==3.8.1"],
+                      "torch", "opencv-python", "tqdm"],
     license="MIT license",
     include_package_data=True,
     keywords='deepdespeckling',
@@ -44,6 +44,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/hi-paris/deepdespeckling',
-    version='0.2.0',
+    version='0.2.1',
     zip_safe=False,
 )
