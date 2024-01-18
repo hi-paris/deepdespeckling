@@ -1,0 +1,9 @@
+include LICENSE
+include README.md
+
+recursive-include deepdespeckling/merlin/training/saved_model *
+recursive-include deepdespeckling/merlin/saved_model *
+recursive-include deepdespeckling/sar2sar/saved_model *
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
