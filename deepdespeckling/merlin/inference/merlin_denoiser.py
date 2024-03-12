@@ -1,9 +1,7 @@
-import logging
+from typing import Tuple
 import torch
 import numpy as np
 from tqdm import tqdm
-from pathlib import Path
-from glob import glob
 
 from deepdespeckling.denoiser import Denoiser
 from deepdespeckling.model import Model
@@ -101,7 +99,7 @@ class MerlinDenoiser(Denoiser):
                                                                                                             :] + np.ones((1, patch_size, patch_size, 1))
         return symetrised_denoised_image
 
-    def preprocess_noisy_image(self, noisy_image: np.array) -> (np.array, np.array, np.array):
+    def preprocess_noisy_image(self, noisy_image: np.array) -> Tuple[np.array, np.array, np.array]:
         """preprocess a given noisy image and generates its real and imaginary parts
 
         Args:
@@ -199,8 +197,8 @@ class MerlinDenoiser(Denoiser):
                                       "imaginary": np.squeeze(noisy_image_imaginary_part)
                                       },
                             "denoised": {"full": denoised_image,
-                                         "real": denoised_image_real_part,
-                                         "imaginary": denoised_image_imaginary_part
+                                         "from_real": denoised_image_real_part,
+                                         "from_imaginary": denoised_image_imaginary_part
                                          }
                             }
 
