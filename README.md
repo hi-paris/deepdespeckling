@@ -1,51 +1,51 @@
 # deepdespeckling 
-## Synthetic Aperture Radar (SAR) images despeckling with Pytorch
 
-Speckle fluctuations seriously limit the interpretability of synthetic aperture radar (SAR) images. This package provides despeckling methods that are leveraging deep learning to highly improve the quality and interpretability of SAR images. Both Stripmap and Spotlight operations are handled by this package. 
- 
-The package contains both inference and training parts, wether you wish to despeckle a set of SAR images or use our model to build or improve your own.
+Speckle noise seriously limits the interpretability of synthetic aperture radar (SAR) images. This package provides <strong>deep learning based despeckling methods</strong> to denoise SAR images. 
 
-To get a test function using Tensorflow's framework : https://gitlab.telecom-paris.fr/ring/MERLIN/-/blob/master/README.md
+<strong>deepdespeckling</strong> gives access to two differents methods: 
+
+* [MERLIN](https://arxiv.org/pdf/2110.13148.pdf) (inference and training)
+* [SAR2SAR](https://arxiv.org/pdf/2006.15037.pdf) (inference only)
+
 
 [![PyPI version](https://badge.fury.io/py/deepdespeckling.svg)](https://badge.fury.io/py/deepdespeckling)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
-Install deepdespeckling by running in the command prompt :
+Before installing deepdespeckling, make sure to install gdal dependancies, it can be done using conda with the following command : 
+```
+conda install -c conda-forge gdal
+```
+
+Then, deepdespeckling can be installed simply using pip :
 
 ```python
 pip install deepdespeckling
 ```
 
-## Authors
 
-* [Emanuele Dalsasso](https://emanueledalsasso.github.io/) (Researcher at ECEO, EPFL)
-* [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Machine Learning Research Engineer)
+## Inference with MERLIN
 
-## Former contributors 
+To despeckle SAR images using MERLIN, images need to be in `.cos` or `.npy` format.
 
-* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Former Hi! PARIS Machine Learning Research Engineer)
-* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Former Hi! PARIS Engineer)
+In order to get the right model, the `model_name` has to be specified in the `get_denoiser()` and the `get_model_weights_path()` functions calls.
+
+This `model_name` can either be :
+- `"spotlight"` for SAR images retrieved with spotlight mode 
+- `"stripmap"` for SAR images retrieved with stripmap mode
 
 
-## Examples
-
-Deepdespeckling offers 2 differents methods to despeckle SAR images: 
-
-* [MERLIN] (https://arxiv.org/pdf/2110.13148.pdf)
-* [SAR2SAR] (https://arxiv.org/pdf/2006.15037.pdf)
-
-### Despeckle one image
+### Despeckle one image with MERLIN
 
 ```python
 from deepdespeckling.utils.load_cosar import cos2mat
 from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
 from deepdespeckling.despeckling import get_model_weights_path, get_denoiser
 
-# Path to one image (cos, tiff or npy file, depending on the model you want to use), can also be a folder of several images
+# Path to one image (cos or npy file), can also be a folder of several images
 image_path="path/to/cosar/image"
-# Model name, can be "spotlight", "stripmap" or "sar2sar"
+# Model name, can be "spotlight" or "stripmap"
 model_name = "spotlight"
 
 image = cos2mat(image_path).astype(np.float32)
@@ -57,7 +57,19 @@ denoised_image = denoiser.denoise_image(
                 image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
 ```
 
-### Despeckle a set of images
+During the preprocessing steps of the noisy image for MERLIN, the real and the imaginary parts are <strong>"symetrised"</strong> (to match the theoretical assumptions of MERLIN). 
+However, we added a parameter to make this step optional (if one wants to implement their own symetrisation for example). 
+To skip this step, just call :  
+
+```python
+denoised_image = denoiser.denoise_image(
+                image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE,
+                symetrise=False)
+```
+
+This parameter can also be added to the despeckling functions presented in the next section
+
+### Despeckle a set of images using MERLIN
 
 For each of this method, you can choose between 3 different functions to despeckle a set of SAR images contained in a folder : 
 
@@ -125,60 +137,56 @@ Noisy cropped image                     |           Denoised cropped image
 :-----------------------------------------------------------:|:------------------------------------------:
  <img src="img/crop/noisy_test_image_data.png" width="100%"> | <img src="img/crop/denoised_test_image_data.png" width="1000%">
 
+## Inference with SAR2SAR
 
-### Train a new model
+To despeckle SAR images using SAR2SAR, images need to be in `.tiff` or `.npy` format.
 
-1) I want to train my own model from scratch:
+In order to get the right model, the `model_name` has to be specified in the `get_denoiser()` and the `get_model_weights_path()` functions calls.
+
+The `model_name` has therefore to be set to `"sar2sar"`. Then, <strong>the despeckling functions (`despeckle, despeckle_from_coordinates, despeckle_from_crop`) work the same as with MERLIN.</strong>
+
+
+### Despeckle one image with SAR2SAR
+
 ```python
-from deepdespeckling.merlin.training.train import create_model, fit_model
-nb_epoch=1
+from deepdespeckling.utils.load_cosar import cos2mat
+from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
+from deepdespeckling.despeckling import get_model_weights_path, get_denoiser
 
-# schedule the learning rate
-lr = 0.001 * np.ones([nb_epoch])
-lr[6:20] = lr[0]/10
-lr[20:] = lr[0]/100
-seed=1
+# Path to one image (tiff or npy file), can also be a folder of several images
+image_path="path/to/cosar/image"
+# Model name, can be "spotlight" or "stripmap"
+model_name = "sar2sar"
 
-training_set_directory="path/to/the/training/data"
-validation_set_directory="path/to/the/test/data"
-save_directory="path/where/to/save/results"
-sample_directory="path/to/sample/data"
-from_pretrained=False
+# Works exactly the same as with MERLIN
+image = cos2mat(image_path).astype(np.float32)
+# Get the right model
+denoiser = get_denoiser(model_name=model_name)
+model_weights_path = get_model_weights_path(model_name=model_name)
 
-model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
-
+denoised_image = denoiser.denoise_image(
+                image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
 ```
 
-2) I want to train a model using the pre-trained version :
-```python
-from deepdespeckling.merlin.training.train import create_model, fit_model
-from deepdespeckling.merlin.training.model import Model
+- Example of result with SAR2SAR :
 
-nb_epoch=1
 
-# schedule the learning rate
-lr = 0.001 * np.ones([nb_epoch])
-lr[6:20] = lr[0]/10
-lr[20:] = lr[0]/100
+Noisy image             |  Denoised image
+:----------------------:|:-------------------------:
+![](img/entire/sar2sar_noisy.png)  |  ![](img/entire/sar2sar_denoised.png)
 
-training_set_directory="path/to/the/training/data"
-validation_set_directory="path/to/the/test/data"
-save_directory="path/where/to/save/results"
-sample_directory="path/to/sample/data"
-from_pretrained=True
 
-model=create_model(Model, batch_size=12, val_batch_size=1, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), from_pretrained=from_pretrained)
-fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
-```
 
-# License
+## Authors
 
-* Free software: MIT
+* [Emanuele Dalsasso](https://emanueledalsasso.github.io/) (Researcher at ECEO, EPFL)
+* [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Research Engineer)
 
-# FAQ
+## Former contributors 
 
-* Please contact us at [engineer@hi-paris.fr](engineer@hi-paris.fr)
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Former Hi! PARIS Research Engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Former Hi! PARIS Research Engineer)
+
 
 # References
 

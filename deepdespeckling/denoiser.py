@@ -1,12 +1,10 @@
 import logging
 import torch
 import numpy as np
-from tqdm import tqdm
 from pathlib import Path
 from glob import glob
 
 from deepdespeckling.model import Model
-from deepdespeckling.utils.constants import M, m
 from deepdespeckling.utils.utils import load_sar_image
 
 
@@ -84,7 +82,36 @@ class Denoiser():
     def denoise_image(self):
         raise NotImplementedError
 
-    def denoise_images(self, images_to_denoise_path: list, weights_path: str, save_dir: str, patch_size: int, stride_size: int):
+    def build_dynamic_parameters_dict(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int, symetrise: bool = True) -> dict:
+        """build a dictionary of parameters for denoise_images function excluding symetrise parameter 
+            if using Sar2SarDenoiser
+
+        Args:
+            noisy_image (numpy array): numpy array containing the noisy image to despeckle 
+            weights_path (str): path to the pth model file
+            patch_size (int): size of the patch of the convolution
+            stride_size (int): number of pixels between one convolution to the next
+            symetrise (bool, optional): _description_. Defaults to True.
+
+        Returns:
+            dict: dictionary of parameters for denoise_images function
+        """
+
+        dict_params = {
+            "noisy_image": noisy_image,
+            "weights_path": weights_path,
+            "patch_size": patch_size,
+            "stride_size": stride_size,
+            "symetrise": symetrise
+        }
+
+        if self.__class__.__name__ == "Sar2SarDenoiser":
+            del dict_params['symetrise']
+
+        return dict_params
+
+    def denoise_images(self, images_to_denoise_path: list, weights_path: str, save_dir: str, patch_size: int,
+                       stride_size: int, symetrise: bool = True):
         """Iterate over a directory of coSAR images and store the denoised images in a directory
 
         Args:
@@ -93,6 +120,8 @@ class Denoiser():
             save_dir (str): repository to save sar images, real images and noisy images
             patch_size (int): size of the patch of the convolution
             stride_size (int): number of pixels between one convolution to the next
+            symetrise (bool) : if using MerlinDenoiser, if True, will symetrise the real and 
+                imaginary parts of the noisy image. Defaults to True
         """
 
         images_to_denoise_paths = glob((images_to_denoise_path + '/*.npy'))
@@ -108,8 +137,9 @@ class Denoiser():
 
             noisy_image_idx = load_sar_image(
                 images_to_denoise_paths[idx]).astype(np.float32)
-            despeckled_images = self.denoise_image(
-                noisy_image_idx, weights_path, patch_size, stride_size)
+            dict_params = self.build_dynamic_parameters_dict(
+                noisy_image_idx, weights_path, patch_size, stride_size, symetrise)
+            despeckled_images = self.denoise_image(**dict_params)
 
             logging.info(
                 f"Saving despeckled images in {save_dir}")
