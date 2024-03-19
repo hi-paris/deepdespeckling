@@ -210,7 +210,7 @@ def get_maximum_patch_size_from_image_dimensions(kernel_size: int, height: int, 
     return maximum_patch_size
 
 
-def symetrise_real_and_imaginary_parts(real_part: np.array, imag_part: np.array) -> (np.array, np.array):
+def symetrise_real_and_imaginary_parts(real_part: np.array, imag_part: np.array) -> tuple[np.array, np.array]:
     """Symetrise given real and imaginary parts to ensure MERLIN properties
 
     Args:
@@ -569,7 +569,3 @@ def preprocess_sar_image_for_cropping(image: np.array, model_name: str) -> np.ar
     image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
     return image
-
-
-if __name__ == "__main__":
-    print(M)
