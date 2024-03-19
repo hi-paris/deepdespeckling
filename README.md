@@ -131,7 +131,7 @@ To despeckle SAR images using SAR2SAR, images need to be in `.tiff` or `.npy` fo
 
 In order to get the right model, the `model_name` has to be specified in the `get_denoiser()` and the `get_model_weights_path()` functions calls.
 
-The `model_name` has therefore to be set to `"sar2sar"`. Then, <strong>the despeckling functions work the same as with MERLIN.</strong>
+The `model_name` has therefore to be set to `"sar2sar"`. Then, <strong>the despeckling functions (`despeckle, despeckle_from_coordinates, despeckle_from_crop`) work the same as with MERLIN.</strong>
 
 
 ### Despeckle one image with SAR2SAR
@@ -164,61 +164,16 @@ Noisy image             |  Denoised image
 ![](img/entire/sar2sar_noisy.png)  |  ![](img/entire/sar2sar_denoised.png)
 
 
-## Training MERLIN
-
-1) I want to train my own model from scratch:
-```python
-from deepdespeckling.merlin.training.train import create_model, fit_model
-nb_epoch=1
-
-# schedule the learning rate
-lr = 0.001 * np.ones([nb_epoch])
-lr[6:20] = lr[0]/10
-lr[20:] = lr[0]/100
-seed=1
-
-training_set_directory="path/to/the/training/data"
-validation_set_directory="path/to/the/test/data"
-save_directory="path/where/to/save/results"
-sample_directory="path/to/sample/data"
-from_pretrained=False
-
-model=create_model(batch_size=12,val_batch_size=1,device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),from_pretrained=from_pretrained)
-fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
-
-```
-
-2) I want to train a model using the pre-trained version :
-```python
-from deepdespeckling.merlin.training.train import create_model, fit_model
-from deepdespeckling.merlin.training.model import Model
-
-nb_epoch=1
-
-# schedule the learning rate
-lr = 0.001 * np.ones([nb_epoch])
-lr[6:20] = lr[0]/10
-lr[20:] = lr[0]/100
-
-training_set_directory="path/to/the/training/data"
-validation_set_directory="path/to/the/test/data"
-save_directory="path/where/to/save/results"
-sample_directory="path/to/sample/data"
-from_pretrained=True
-
-model=create_model(Model, batch_size=12, val_batch_size=1, device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), from_pretrained=from_pretrained)
-fit_model(model, lr, nb_epoch, training_set_directory, validation_set_directory, sample_directory, save_directory, seed=2)
-```
 
 ## Authors
 
 * [Emanuele Dalsasso](https://emanueledalsasso.github.io/) (Researcher at ECEO, EPFL)
-* [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Research Machine Learning Engineer)
+* [Hadrien Mariaccia](https://www.linkedin.com/in/hadrien-mar/) (Hi! PARIS Research Engineer)
 
 ## Former contributors 
 
-* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Former Hi! PARIS Research Machine Learning Engineer)
-* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Former Hi! PARIS Engineer)
+* [Youcef Kemiche](https://www.linkedin.com/in/youcef-kemiche-3095b9174/) (Former Hi! PARIS Research Engineer)
+* [Pierre Blanchard](https://www.linkedin.com/in/pierre-blanchard-28245462/) (Former Hi! PARIS Research Engineer)
 
 
 # References
