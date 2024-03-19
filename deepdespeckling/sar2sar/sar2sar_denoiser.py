@@ -1,9 +1,6 @@
-import logging
 import torch
 import numpy as np
 from tqdm import tqdm
-from pathlib import Path
-from glob import glob
 
 from deepdespeckling.denoiser import Denoiser
 from deepdespeckling.model import Model
