@@ -1,9 +1,6 @@
-import logging
 import torch
 import numpy as np
 from tqdm import tqdm
-from pathlib import Path
-from glob import glob
 
 from deepdespeckling.denoiser import Denoiser
 from deepdespeckling.model import Model
@@ -37,42 +34,13 @@ class MerlinDenoiser(Denoiser):
                 save_image_to_npy_and_png(
                     despeckled_images[key][key2], save_dir, f"/{key}/{key}_{key2}_", image_name, threshold)
 
-    def symetrise_real_and_imaginary_kernel(self, x: int, y: int, i_real_part: np.array, i_imag_part: np.array, patch_size: int) -> (torch.tensor, torch.tensor):
-        """ Get subpart of an image to denoise delimited by x and y as an imaginary and a real part, 
-        symetrise it so that the noises are independant in each part,
-        normalize it and return it as torch tensors
-
-        Args:
-            x (int): x image
-            y (int): y image
-            i_real_part (numpy array): real part of the image
-            i_imag_part (numpy array): imaginary part of the image
-            patch_size (int): patch size of the convolution
-
-        Returns:
-            images to denoise (torch tensor): real and imaginary parts symetrised as torch tensors
-        """
-        real_to_denoise, imag_to_denoise = symetrise_real_and_imaginary_parts(
-            i_real_part[:, x:x + patch_size, y:y + patch_size, :], i_imag_part[:, x:x + patch_size, y:y + patch_size, :])
-
-        real_to_denoise = torch.tensor(
-            real_to_denoise, device=self.device, dtype=torch.float32)
-        imag_to_denoise = torch.tensor(
-            imag_to_denoise, device=self.device, dtype=torch.float32)
-
-        real_to_denoise = (torch.log(torch.square(
-            real_to_denoise)+1e-3)-2*m)/(2*(M-m))
-        imag_to_denoise = (torch.log(torch.square(
-            imag_to_denoise)+1e-3)-2*m)/(2*(M-m))
-
-        return real_to_denoise, imag_to_denoise
-
-    def denoise_image_kernel(self, symetrised_noisy_image: torch.tensor, symetrised_denoised_image: np.array, x: int, y: int, patch_size: int, model: Model, normalisation_kernel: bool = False) -> np.array:
+    def denoise_image_kernel(self, noisy_image: torch.tensor, denoised_image: np.array, x: int, y: int, patch_size: int,
+                             model: Model, normalisation_kernel: bool = False) -> np.array:
         """Denoise a subpart of a given symetrised noisy image delimited by x, y and patch_size using a given model
 
         Args:
-            symetrised_noisy_image (torch tensor): symetrised noisy image to denoise
-            symetrised_denoised_image (numpy array): symetrised partially denoised image
+            noisy_image (torch tensor): symetrised noisy image to denoise
+            denoised_image (numpy array): symetrised partially denoised image
             x (int): x coordinate of current kernel to denoise
             y (int): y coordinate of current kernel to denoise
             patch_size (int): patch size
@@ -80,28 +48,28 @@ class MerlinDenoiser(Denoiser):
             normalisation_kernel (bool, optional): Determine if. Defaults to False.
 
         Returns:
-            symetrised_denoised_image (numpy array): image denoised in the given coordinates and the ones already iterated
+            denoised_image (numpy array): image denoised in the given coordinates and the ones already iterated
         """
         if not normalisation_kernel:
 
             if self.device != 'cpu':
                 tmp_clean_image = model.forward(
-                    symetrised_noisy_image).cpu().detach().numpy()
+                    noisy_image).cpu().detach().numpy()
             else:
                 tmp_clean_image = model.forward(
-                    symetrised_noisy_image).detach().numpy()
+                    noisy_image).detach().numpy()
 
             tmp_clean_image = np.moveaxis(tmp_clean_image, 1, -1)
-            symetrised_denoised_image[:, x:x + patch_size, y:y + patch_size, :] = symetrised_denoised_image[:, x:x + patch_size,
-                                                                                                            y:y + patch_size,
-                                                                                                            :] + tmp_clean_image
+            denoised_image[:, x:x + patch_size, y:y + patch_size, :] = denoised_image[:, x:x + patch_size,
+                                                                                      y:y + patch_size,
+                                                                                      :] + tmp_clean_image
         else:
-            symetrised_denoised_image[:, x:x + patch_size, y:y + patch_size, :] = symetrised_denoised_image[:, x:x + patch_size,
-                                                                                                            y:y + patch_size,
-                                                                                                            :] + np.ones((1, patch_size, patch_size, 1))
-        return symetrised_denoised_image
+            denoised_image[:, x:x + patch_size, y:y + patch_size, :] = denoised_image[:, x:x + patch_size,
+                                                                                      y:y + patch_size,
+                                                                                      :] + np.ones((1, patch_size, patch_size, 1))
+        return denoised_image
 
-    def preprocess_noisy_image(self, noisy_image: np.array) -> (np.array, np.array, np.array):
+    def preprocess_noisy_image(self, noisy_image: np.array) -> tuple[np.array, np.array, np.array]:
         """preprocess a given noisy image and generates its real and imaginary parts
 
         Args:
@@ -120,7 +88,7 @@ class MerlinDenoiser(Denoiser):
 
         return noisy_image, noisy_image_real_part, noisy_image_imaginary_part
 
-    def preprocess_denoised_image(self, denoised_image_real_part: np.array, denoised_image_imaginary_part: np.array, count_image: np.array) -> (np.array, np.array, np.array):
+    def preprocess_denoised_image(self, denoised_image_real_part: np.array, denoised_image_imaginary_part: np.array, count_image: np.array) -> tuple[np.array, np.array, np.array]:
         """Preprocess given denoised real and imaginary parts of an image, and build the full denoised image
 
         Args:
@@ -145,7 +113,7 @@ class MerlinDenoiser(Denoiser):
 
         return denoised_image, denoised_image_real_part, denoised_image_imaginary_part
 
-    def denoise_image(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int) -> dict:
+    def denoise_image(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int, symetrise: bool = True) -> dict:
         """Preprocess and denoise a coSAR image using given model weights
 
         Args:
@@ -181,8 +149,23 @@ class MerlinDenoiser(Denoiser):
 
         for x in tqdm(x_range):
             for y in y_range:
-                real_to_denoise, imag_to_denoise = self.symetrise_real_and_imaginary_kernel(
-                    x, y, noisy_image_real_part, noisy_image_imaginary_part, patch_size)
+                real_to_denoise = noisy_image_real_part[:,
+                                                        x:x + patch_size, y:y + patch_size, :]
+                imag_to_denoise = noisy_image_imaginary_part[:,
+                                                             x:x + patch_size, y:y + patch_size, :]
+                if symetrise:
+                    real_to_denoise, imag_to_denoise = symetrise_real_and_imaginary_parts(
+                        real_to_denoise, imag_to_denoise)
+
+                real_to_denoise = torch.tensor(
+                    real_to_denoise, device=self.device, dtype=torch.float32)
+                imag_to_denoise = torch.tensor(
+                    imag_to_denoise, device=self.device, dtype=torch.float32)
+
+                real_to_denoise = (torch.log(torch.square(
+                    real_to_denoise)+1e-3)-2*m)/(2*(M-m))
+                imag_to_denoise = (torch.log(torch.square(
+                    imag_to_denoise)+1e-3)-2*m)/(2*(M-m))
 
                 denoised_image_real_part = self.denoise_image_kernel(
                     real_to_denoise, denoised_image_real_part, x, y, patch_size, model)
@@ -199,8 +182,8 @@ class MerlinDenoiser(Denoiser):
                                       "imaginary": np.squeeze(noisy_image_imaginary_part)
                                       },
                             "denoised": {"full": denoised_image,
-                                         "real": denoised_image_real_part,
-                                         "imaginary": denoised_image_imaginary_part
+                                         "from_real": denoised_image_real_part,
+                                         "from_imaginary": denoised_image_imaginary_part
                                          }
                             }
 
