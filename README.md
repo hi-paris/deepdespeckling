@@ -57,6 +57,8 @@ denoised_image = denoiser.denoise_image(
                 image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
 ```
 
+#### Symetrise parameter
+
 During the preprocessing steps of the noisy image for MERLIN, the real and the imaginary parts are <strong>"symetrised"</strong> (to match the theoretical assumptions of MERLIN). 
 However, we added a parameter to make this step optional (if one wants to implement their own symetrisation for example). 
 To skip this step, just call :  
