@@ -1,11 +1,6 @@
 import logging
-import os
 import torch
 import numpy as np
-
-from deepdespeckling.model import Model
-
-this_dir, _ = os.path.split(__file__)
 
 
 class Denoiser:
@@ -14,31 +9,6 @@ class Denoiser:
 
     def __init__(self):
         self.device = self.get_device()
-
-    def get_model_weights_path(self, model_name: str) -> str:
-        """Get model weights path from model name
-
-        Args:
-            model_name (str): model name, either "spotlight" or "stripmap" to select MERLIN model on the 
-                right cosar image format or "sar2sar" for SAR2SAR model
-
-        Returns:
-            model_weights_path (str): the path of the weights of the specified model
-        """
-        if model_name == "spotlight":
-            model_weights_path = os.path.join(
-                this_dir, "merlin/saved_model", "spotlight.pth")
-        elif model_name == "stripmap":
-            model_weights_path = os.path.join(
-                this_dir, "merlin/saved_model", "stripmap.pth")
-        elif model_name == "sar2sar":
-            model_weights_path = os.path.join(
-                this_dir, "sar2sar/saved_model", "sar2sar.pth")
-        else:
-            raise ValueError(
-                "The model name doesn't refer to an existing model ")
-
-        return model_weights_path
 
     def get_device(self) -> str:
         """Get torch device to use depending on gpu's availability
@@ -55,23 +25,6 @@ class Denoiser:
         logging.info(f"{device} device is used by torch")
 
         return device
-
-    def load_model(self, weights_path: str, patch_size: int) -> Model:
-        """Load model with given weights 
-
-        Args:
-            weights_path (str): path to weights  
-            patch_size (int): patch size
-
-        Returns:
-            model (Model): model loaded with stored weights
-        """
-        model = Model(torch.device(self.device),
-                      height=patch_size, width=patch_size)
-        model.load_state_dict(torch.load(
-            weights_path, map_location=torch.device("cpu")))
-
-        return model
 
     def initialize_axis_range(self, image_axis_dim: int, patch_size: int, stride_size: int) -> list:
         """Initialize the convolution range for x or y axis

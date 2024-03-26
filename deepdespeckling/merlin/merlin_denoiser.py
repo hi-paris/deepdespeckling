@@ -2,15 +2,17 @@ from glob import glob
 import logging
 from pathlib import Path
 import torch
+import os
 import numpy as np
 from tqdm import tqdm
 
 from deepdespeckling.denoiser import Denoiser
-from deepdespeckling.despeckling import get_model_weights_path
 from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
 from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, save_image_to_npy_and_png,
                                          symetrise_real_and_imaginary_parts, create_empty_folder_in_directory)
+
+current_dir = os.path.dirname(__file__)
 
 
 class MerlinDenoiser(Denoiser):
@@ -24,8 +26,44 @@ class MerlinDenoiser(Denoiser):
             model_name (str): name to be used, can be "spotlight" or "stripmap"
         """
         super().__init__(**params)
-        self.weights_path = get_model_weights_path(model_name=model_name)
+        self.model_name = model_name
         self.symetrise = symetrise
+        self.weights_path = self.init_model_weights_path()
+
+    def init_model_weights_path(self) -> str:
+        """Get model weights path from model name
+
+        Returns:
+            model_weights_path (str): the path of the weights of the specified model
+        """
+        if self.model_name == "spotlight":
+            model_weights_path = os.path.join(
+                current_dir, "saved_models/spotlight.pth")
+        elif self.model_name == "stripmap":
+            model_weights_path = os.path.join(
+                current_dir, "saved_models/stripmap.pth")
+        else:
+            raise ValueError(
+                "The model name doesn't refer to an existing model ")
+
+        return model_weights_path
+
+    def load_model(self, patch_size: int) -> Model:
+        """Load model with given weights 
+
+        Args:
+            weights_path (str): path to weights  
+            patch_size (int): patch size
+
+        Returns:
+            model (Model): model loaded with stored weights
+        """
+        model = Model(torch.device(self.device),
+                      height=patch_size, width=patch_size)
+        model.load_state_dict(torch.load(
+            self.weights_path, map_location=torch.device("cpu")))
+
+        return model
 
     def save_despeckled_images(self, despeckled_images: dict, image_name: str, save_dir: str):
         """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
@@ -145,8 +183,7 @@ class MerlinDenoiser(Denoiser):
         noisy_image, noisy_image_real_part, noisy_image_imaginary_part = self.preprocess_noisy_image(
             noisy_image)
 
-        model = self.load_model(
-            weights_path=self.weights_path, patch_size=patch_size)
+        model = self.load_model(patch_size=patch_size)
 
         count_image = np.zeros(noisy_image_real_part.shape)
         denoised_image_real_part = np.zeros(noisy_image_real_part.shape)
@@ -224,7 +261,7 @@ class MerlinDenoiser(Denoiser):
             noisy_image_idx = load_sar_image(
                 images_to_denoise_paths[idx]).astype(np.float32)
             despeckled_images = self.denoise_image(
-                noisy_image_idx, self.weights_path, patch_size, stride_size, self.symetrise)
+                noisy_image_idx, patch_size, stride_size)
 
             logging.info(
                 f"Saving despeckled images in {save_dir}")

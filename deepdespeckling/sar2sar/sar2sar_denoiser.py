@@ -1,16 +1,18 @@
 from glob import glob
 import logging
+import os
 from pathlib import Path
 import torch
 import numpy as np
 from tqdm import tqdm
 
 from deepdespeckling.denoiser import Denoiser
-from deepdespeckling.despeckling import get_model_weights_path
 from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
 from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, normalize_sar_image, save_image_to_npy_and_png,
                                          create_empty_folder_in_directory)
+
+current_dir = os.path.dirname(__file__)
 
 
 class Sar2SarDenoiser(Denoiser):
@@ -19,7 +21,26 @@ class Sar2SarDenoiser(Denoiser):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.weights_path = self.get_model_weights_path(model_name="sar2sar")
+        self.weights_path = os.path.join(
+            current_dir, "saved_model/sar2sar.pth")
+        print(self.weights_path)
+
+    def load_model(self, patch_size: int) -> Model:
+        """Load model with given weights 
+
+        Args:
+            weights_path (str): path to weights  
+            patch_size (int): patch size
+
+        Returns:
+            model (Model): model loaded with stored weights
+        """
+        model = Model(torch.device(self.device),
+                      height=patch_size, width=patch_size)
+        model.load_state_dict(torch.load(
+            self.weights_path, map_location=torch.device("cpu")))
+
+        return model
 
     def save_despeckled_images(self, despeckled_images: dict, image_name: str, save_dir: str):
         """Save full, real and imaginary part of noisy and denoised image stored in a dictionary in png to a given folder
@@ -113,8 +134,7 @@ class Sar2SarDenoiser(Denoiser):
         image_height = noisy_image.size(dim=1)
         image_width = noisy_image.size(dim=2)
 
-        model = self.load_model(
-            weights_path=self.weights_path, patch_size=patch_size)
+        model = self.load_model(patch_size=patch_size)
 
         count_image = np.zeros((image_height, image_width))
         denoised_image = np.zeros((image_height, image_width))
@@ -171,7 +191,7 @@ class Sar2SarDenoiser(Denoiser):
             noisy_image_idx = load_sar_image(
                 images_to_denoise_paths[idx]).astype(np.float32)
             despeckled_images = self.denoise_image(
-                noisy_image_idx, self.weights_path, patch_size, stride_size)
+                noisy_image_idx, patch_size, stride_size)
 
             logging.info(
                 f"Saving despeckled images in {save_dir}")
