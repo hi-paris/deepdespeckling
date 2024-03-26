@@ -29,11 +29,13 @@ pip install deepdespeckling
 
 To despeckle SAR images using MERLIN, images need to be in `.cos` or `.npy` format.
 
-In order to get the right model, the `model_name` has to be specified in the `get_denoiser()` and the `get_model_weights_path()` functions calls.
+In order to get the right model, the `model_name` has to be specified when building a `MerlinDenoiser`.
 
 This `model_name` can either be :
 - `"spotlight"` for SAR images retrieved with spotlight mode 
 - `"stripmap"` for SAR images retrieved with stripmap mode
+
+During the preprocessing steps of the noisy image for MERLIN, the real and the imaginary parts are <strong>"symetrised"</strong> (to match the theoretical assumptions of MERLIN). To skip this step, you can set the `symetrise` parameter to `False`
 
 
 ### Despeckle one image with MERLIN
@@ -41,35 +43,19 @@ This `model_name` can either be :
 ```python
 from deepdespeckling.utils.load_cosar import cos2mat
 from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
-from deepdespeckling.despeckling import get_model_weights_path, get_denoiser
+from deepdespeckling.merlin.merlin_denoiser import MerlinDenoiser
 
-# Path to one image (cos or npy file), can also be a folder of several images
+# Path to one image (cos or npy file)
 image_path="path/to/cosar/image"
 # Model name, can be "spotlight" or "stripmap"
 model_name = "spotlight"
+symetrise = True
 
 image = cos2mat(image_path).astype(np.float32)
-# Get the right model
-denoiser = get_denoiser(model_name=model_name)
-model_weights_path = get_model_weights_path(model_name=model_name)
 
-denoised_image = denoiser.denoise_image(
-                image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
+denoiser = MerlinDenoiser(model_name=model_name, symetrise=symetrise)
+denoised_image = denoiser.denoise_image(image, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
 ```
-
-#### Symetrise parameter
-
-During the preprocessing steps of the noisy image for MERLIN, the real and the imaginary parts are <strong>"symetrised"</strong> (to match the theoretical assumptions of MERLIN). 
-However, we added a parameter to make this step optional (if one wants to implement their own symetrisation for example). 
-To skip this step, just call :  
-
-```python
-denoised_image = denoiser.denoise_image(
-                image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE,
-                symetrise=False)
-```
-
-This parameter can also be added to the despeckling functions presented in the next section
 
 ### Despeckle a set of images using MERLIN
 
@@ -84,12 +70,12 @@ For each of this method, you can choose between 3 different functions to despeck
 ```python
 from deepdespeckling.despeckling import despeckle
 
-# Path to one image (cos or npy file), can also be a folder of several images
+# Path to a folder of several images (cos or npy files)
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
 
-denoised_image = despeckle(image_path, destination_directory, model_name="spotlight")
+despeckle(image_path, destination_directory, model_name="spotlight", symetrise=True)
 ```
 Noisy image             |  Denoised image
 :----------------------:|:-------------------------:
@@ -100,13 +86,14 @@ Noisy image             |  Denoised image
 ```python
 from deepdespeckling.despeckling import despeckle_from_coordinates
 
-# Path to one image (cos or npy file), can also be a folder of several images
+# Path to a folder of several images image (cos or npy files)
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
+# Coordinates of the subparts of the images to be despeckled
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
-denoised_image = despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_name="spotlight")
+despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_name="spotlight", symetrise=True)
 ```
 
 Noisy image             |  Denoised image
@@ -118,13 +105,13 @@ Noisy image             |  Denoised image
 ```python
 from deepdespeckling.merlin.inference.despeckling import despeckle_from_crop
 
-# Path to one image (cos or npy file), can also be a folder of several images
+# Path to a folder of several images image (cos or npy files)
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
 fixed = True "(it will crop a 256*256 image from the position of your click)" or False "(you will draw free-handly the area of your interest)"
 
-denoised_image = despeckle_from_crop(image_path, destination_directory, model_name="spotlight", fixed=False)
+despeckle_from_crop(image_path, destination_directory, model_name="spotlight", fixed=False, symetrise=True)
 ```
 
 * The cropping tool: Just select an area and press "q" when you are satisfied with the crop !
@@ -143,29 +130,22 @@ Noisy cropped image                     |           Denoised cropped image
 
 To despeckle SAR images using SAR2SAR, images need to be in `.tiff` or `.npy` format.
 
-In order to get the right model, the `model_name` has to be specified in the `get_denoiser()` and the `get_model_weights_path()` functions calls.
-
-The `model_name` has therefore to be set to `"sar2sar"`. Then, <strong>the despeckling functions (`despeckle, despeckle_from_coordinates, despeckle_from_crop`) work the same as with MERLIN.</strong>
-
 
 ### Despeckle one image with SAR2SAR
 
 ```python
 from deepdespeckling.utils.load_cosar import cos2mat
 from deepdespeckling.utils.constants import PATCH_SIZE, STRIDE_SIZE
-from deepdespeckling.despeckling import get_model_weights_path, get_denoiser
+from deepdespeckling.sar2sar.sar2sar_denoiser import Sar2SarDenoiser
 
-# Path to one image (tiff or npy file), can also be a folder of several images
+# Path to one image (tiff or npy file)
 image_path="path/to/cosar/image"
-# Model name, can be "spotlight" or "stripmap"
-model_name = "sar2sar"
 
 # Works exactly the same as with MERLIN
 image = cos2mat(image_path).astype(np.float32)
-# Get the right model
-denoiser = get_denoiser(model_name=model_name)
-model_weights_path = get_model_weights_path(model_name=model_name)
 
+# Denoise the image with SAR2SAR
+denoiser = Sar2SarDenoiser()
 denoised_image = denoiser.denoise_image(
                 image, model_weights_path, patch_size=PATCH_SIZE, stride_size=STRIDE_SIZE)
 ```
@@ -178,6 +158,21 @@ Noisy image             |  Denoised image
 ![](img/entire/sar2sar_noisy.png)  |  ![](img/entire/sar2sar_denoised.png)
 
 
+### Despeckle a set of images using SAR2SAR
+
+The despeckling functions (`despeckle, despeckle_from_coordinates, despeckle_from_crop`) work the same as with MERLIN. To use SAR2SAR, the `model_name` parameter has to be set to `"sar2sar"`
+
+For example, to despeckle a set of fullsize images:
+```python
+from deepdespeckling.despeckling import despeckle
+
+# Path to a folder of several images (tiff or npy files)
+image_path="path/to/cosar/image"
+# Folder where results are stored
+destination_directory="path/where/to/save/results"
+
+despeckle(image_path, destination_directory, model_name="sar2sar")
+```
 
 ## Authors
 
