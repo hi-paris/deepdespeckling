@@ -90,7 +90,7 @@ from deepdespeckling.despeckling import despeckle_from_coordinates
 image_path="path/to/cosar/image"
 # Folder where results are stored
 destination_directory="path/where/to/save/results"
-# Coordinates of the subparts of the images to ne despeckled
+# Coordinates of the subparts of the images to be despeckled
 coordinates_dictionnary = {'x_start':2600,'y_start':1000,'x_end':3000,'y_end':1200}
 
 despeckle_from_coordinates(image_path, coordinates_dict, destination_directory, model_name="spotlight", symetrise=True)
