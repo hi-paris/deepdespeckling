@@ -38,7 +38,7 @@ class Sar2SarDenoiser(Denoiser):
         model = Model(torch.device(self.device),
                       height=patch_size, width=patch_size)
         model.load_state_dict(torch.load(
-            self.weights_path, map_location=torch.device("cpu")))
+            self.weights_path, map_location=torch.device("cpu"))['model_state_dict'])
 
         return model
 
