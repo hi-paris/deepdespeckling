@@ -10,46 +10,22 @@ from deepdespeckling.utils.utils import (crop_image, get_cropping_coordinates, l
                                          create_empty_folder_in_directory, preprocess_and_store_sar_images)
 
 
-this_dir, this_filename = os.path.split(__file__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_model_weights_path(model_name: str) -> str:
-    """Get model weights path from model name
-
-    Args:
-        model_name (str): model name, either "spotlight" or "stripmap" to select MERLIN model on the 
-            right cosar image format or "sar2sar" for SAR2SAR model
-
-    Returns:
-        model_weights_path (str): the path of the weights of the specified model
-    """
-    if model_name == "spotlight":
-        model_weights_path = os.path.join(
-            this_dir, "merlin/saved_model", "spotlight.pth")
-    elif model_name == "stripmap":
-        model_weights_path = os.path.join(
-            this_dir, "merlin/saved_model", "stripmap.pth")
-    elif model_name == "sar2sar":
-        model_weights_path = os.path.join(
-            this_dir, "sar2sar/saved_model", "sar2sar.pth")
-    else:
-        raise ValueError("The model name doesn't refer to an existing model ")
-
-    return model_weights_path
-
-
-def get_denoiser(model_name: str) -> Denoiser:
+def get_denoiser(model_name: str, symetrise: bool = True) -> Denoiser:
     """Get the right denoiser object from the model name
 
     Args:
         model_name (str): model name to be use for despeckling 
+        symetrise (bool) : if using spotlight or stripmap model, if True, will symetrise the real and 
+            imaginary parts of the noisy image. Defaults to True
 
     Returns:
         denoiser (Denoiser): the right denoiser, Sar2SarDenoiser or MerlinDenoiser
     """
     if model_name in ["spotlight", "stripmap"]:
-        denoiser = MerlinDenoiser()
+        denoiser = MerlinDenoiser(model_name=model_name, symetrise=symetrise)
     elif model_name == "sar2sar":
         denoiser = Sar2SarDenoiser()
     else:
@@ -76,8 +52,6 @@ def despeckle(sar_images_path: str, destination_directory_path: str, model_name:
     logging.info(
         f"""Despeckling entire images using {model_name} weights""")
 
-    model_weights_path = get_model_weights_path(model_name=model_name)
-
     processed_images_path = create_empty_folder_in_directory(destination_directory_path=destination_directory_path,
                                                              folder_name="processed_images")
     preprocess_and_store_sar_images(
@@ -86,9 +60,9 @@ def despeckle(sar_images_path: str, destination_directory_path: str, model_name:
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    denoiser = get_denoiser(model_name=model_name)
-    denoiser.denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                            patch_size=patch_size, stride_size=stride_size, symetrise=symetrise)
+    denoiser = get_denoiser(model_name=model_name, symetrise=symetrise)
+    denoiser.denoise_images(images_to_denoise_path=processed_images_path, save_dir=destination_directory_path,
+                            patch_size=patch_size, stride_size=stride_size)
 
 
 def despeckle_from_coordinates(sar_images_path: str, coordinates_dict: dict, destination_directory_path: str, model_name: str = "spotlight",
@@ -110,8 +84,6 @@ def despeckle_from_coordinates(sar_images_path: str, coordinates_dict: dict, des
     logging.info(
         f"""Despeckling images from coordinates using {model_name} weights""")
 
-    model_weights_path = get_model_weights_path(model_name=model_name)
-
     processed_images_path = create_empty_folder_in_directory(destination_directory_path=destination_directory_path,
                                                              folder_name="processed_images")
     preprocess_and_store_sar_images_from_coordinates(sar_images_path=sar_images_path, processed_images_path=processed_images_path,
@@ -120,9 +92,9 @@ def despeckle_from_coordinates(sar_images_path: str, coordinates_dict: dict, des
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing test results in {destination_directory_path}")
 
-    denoiser = get_denoiser(model_name=model_name)
-    denoiser.denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                            patch_size=patch_size, stride_size=stride_size, symetrise=symetrise)
+    denoiser = get_denoiser(model_name=model_name, symetrise=symetrise)
+    denoiser.denoise_images(images_to_denoise_path=processed_images_path, save_dir=destination_directory_path,
+                            patch_size=patch_size, stride_size=stride_size)
 
 
 def despeckle_from_crop(sar_images_path: str, destination_directory_path: str, model_name: str = "spotlight",
@@ -143,8 +115,6 @@ def despeckle_from_crop(sar_images_path: str, destination_directory_path: str, m
 
     logging.info(
         f"""Cropping and despeckling images using {model_name} weights""")
-
-    model_weights_path = get_model_weights_path(model_name=model_name)
 
     processed_images_path = create_empty_folder_in_directory(destination_directory_path=destination_directory_path,
                                                              folder_name="processed_images")
@@ -169,6 +139,6 @@ def despeckle_from_crop(sar_images_path: str, destination_directory_path: str, m
     logging.info(
         f"Starting inference.. Collecting data from {sar_images_path} and storing results in {destination_directory_path}")
 
-    denoiser = get_denoiser(model_name=model_name)
-    denoiser.denoise_images(images_to_denoise_path=processed_images_path, weights_path=model_weights_path, save_dir=destination_directory_path,
-                            patch_size=patch_size, stride_size=stride_size, symetrise=symetrise)
+    denoiser = get_denoiser(model_name=model_name, symetrise=symetrise)
+    denoiser.denoise_images(images_to_denoise_path=processed_images_path, save_dir=destination_directory_path,
+                            patch_size=patch_size, stride_size=stride_size)

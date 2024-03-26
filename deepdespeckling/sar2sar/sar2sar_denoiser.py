@@ -1,3 +1,7 @@
+from glob import glob
+import logging
+import os
+from pathlib import Path
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -5,8 +9,10 @@ from tqdm import tqdm
 from deepdespeckling.denoiser import Denoiser
 from deepdespeckling.model import Model
 from deepdespeckling.utils.constants import M, m
-from deepdespeckling.utils.utils import (denormalize_sar_image, normalize_sar_image, save_image_to_npy_and_png,
+from deepdespeckling.utils.utils import (denormalize_sar_image, load_sar_image, normalize_sar_image, save_image_to_npy_and_png,
                                          create_empty_folder_in_directory)
+
+current_dir = os.path.dirname(__file__)
 
 
 class Sar2SarDenoiser(Denoiser):
@@ -15,8 +21,11 @@ class Sar2SarDenoiser(Denoiser):
 
     def __init__(self, **params):
         super().__init__(**params)
+        self.weights_path = os.path.join(
+            current_dir, "saved_model/sar2sar.pth")
+        print(self.weights_path)
 
-    def load_model(self, weights_path: str, patch_size: int) -> Model:
+    def load_model(self, patch_size: int) -> Model:
         """Load model with given weights 
 
         Args:
@@ -29,7 +38,7 @@ class Sar2SarDenoiser(Denoiser):
         model = Model(torch.device(self.device),
                       height=patch_size, width=patch_size)
         model.load_state_dict(torch.load(
-            weights_path, map_location=torch.device("cpu"))['model_state_dict'])
+            self.weights_path, map_location=torch.device("cpu"))['model_state_dict'])
 
         return model
 
@@ -102,12 +111,11 @@ class Sar2SarDenoiser(Denoiser):
             raise TypeError('Please provide a numpy array')
         return np.exp((np.clip(np.squeeze(image), 0, image.max()))*(M-m)+m)
 
-    def denoise_image(self, noisy_image: np.array, weights_path: str, patch_size: int, stride_size: int) -> dict:
+    def denoise_image(self, noisy_image: np.array, patch_size: int, stride_size: int) -> dict:
         """Preprocess and denoise a coSAR image using given model weights
 
         Args:
             noisy_image (numpy array): numpy array containing the noisy image to despeckle 
-            weights_path (str): path to the pth model file
             patch_size (int): size of the patch of the convolution
             stride_size (int): number of pixels between one convolution to the next
 
@@ -126,8 +134,7 @@ class Sar2SarDenoiser(Denoiser):
         image_height = noisy_image.size(dim=1)
         image_width = noisy_image.size(dim=2)
 
-        model = self.load_model(
-            weights_path=weights_path, patch_size=patch_size)
+        model = self.load_model(patch_size=patch_size)
 
         count_image = np.zeros((image_height, image_width))
         denoised_image = np.zeros((image_height, image_width))
@@ -158,3 +165,35 @@ class Sar2SarDenoiser(Denoiser):
                             }
 
         return despeckled_image
+
+    def denoise_images(self, images_to_denoise_path: list, save_dir: str, patch_size: int,
+                       stride_size: int):
+        """Iterate over a directory of coSAR images and store the denoised images in a directory
+
+        Args:
+            images_to_denoise_path (list): a list of paths of npy images to denoise
+            save_dir (str): repository to save sar images, real images and noisy images
+            patch_size (int): size of the patch of the convolution
+            stride_size (int): number of pixels between one convolution to the next
+        """
+
+        images_to_denoise_paths = glob((images_to_denoise_path + '/*.npy'))
+
+        assert len(images_to_denoise_paths) != 0, 'No data!'
+
+        logging.info(f"Starting denoising images in {images_to_denoise_paths}")
+
+        for idx in range(len(images_to_denoise_paths)):
+            image_name = Path(images_to_denoise_paths[idx]).name
+            logging.info(
+                f"Despeckling {image_name}")
+
+            noisy_image_idx = load_sar_image(
+                images_to_denoise_paths[idx]).astype(np.float32)
+            despeckled_images = self.denoise_image(
+                noisy_image_idx, patch_size, stride_size)
+
+            logging.info(
+                f"Saving despeckled images in {save_dir}")
+            self.save_despeckled_images(
+                despeckled_images, image_name, save_dir)
