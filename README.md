@@ -174,6 +174,14 @@ destination_directory="path/where/to/save/results"
 despeckle(image_path, destination_directory, model_name="sar2sar")
 ```
 
+## Documentation
+
+To read a clean documentation of the package, you can generate it using sphinx files in the `docs` folder
+
+1. `cd docs`
+2. `make html `
+3. open `build/index.html`
+
 ## Authors
 
 * [Emanuele Dalsasso](https://emanueledalsasso.github.io/) (Researcher at ECEO, EPFL)
