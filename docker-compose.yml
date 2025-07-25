@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  deepdespeckling-jupyter:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+    environment:
+      - PYTHONPATH=/app
+    container_name: deepdespeckling-lab

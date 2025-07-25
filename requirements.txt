@@ -1,0 +1,8 @@
+numpy
+Pillow
+scipy
+torch
+opencv-python
+tqdm
+matplotlib
+gdal==3.6.2

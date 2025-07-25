@@ -104,3 +104,9 @@ ENV/
 .DS_Store
 img/.DS_Store
 img/entire/.DS_Store
+
+# Data
+data/
+data/.DS_Store
+results/
+results/.DS_Store

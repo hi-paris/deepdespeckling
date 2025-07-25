@@ -14,6 +14,7 @@ Speckle noise seriously limits the interpretability of synthetic aperture radar 
 
 ## Installation
 
+### 1. Installation with conda
 Before installing deepdespeckling, make sure to install gdal dependancies, it can be done using conda with the following command : 
 ```
 conda install -c conda-forge gdal
@@ -24,6 +25,41 @@ Then, deepdespeckling can be installed simply using pip :
 ```python
 pip install deepdespeckling
 ```
+
+### 2. Installation with Docker
+Depending on your infrastructure, if it supports Docker, you can setup a docker environment with `python:3.10` and the dependencies in `requirements.txt` with these steps: 
+- 1. Build a Docker image:
+```
+docker-compose build   
+```
+
+- 2. Run the docker container:
+```
+docker-compose up
+```
+Once the container is running, you can access to the JupyterLab by opening your browser: 
+```
+http://127.0.0.1:8888/lab
+```
+
+The mounted volumes from your local machine to the docker container are:
+- Project root: `.`:`/app/`
+- Main code: `/app/deepdespeckling/`
+- Data: `./data`:`/app/data/`
+- Notebooks: `./notebooks`:`/app/notebooks/`
+
+Notebooks:
+- `tutorial_notebook.ipynb`: contains the different usage of the models.
+- `generate_test_images.ipynb`: helps to generate fake images to test the logic of `generate_test_images.ipynb`. 
+
+
+- 3. Once, you finish your work, stop the container and remove the attached volumes with: 
+```
+docker-compose down -v
+```
+
+⚠️ Warning: If your infrastructure (e.g. HPC clusters, shared servers, or corporate machines) does not support Docker, you will not be able to use this setup.
+In that case, you can use a virtual environment or Conda to manually install dependencies from `requirements.txt`.
 
 
 ## Inference with MERLIN

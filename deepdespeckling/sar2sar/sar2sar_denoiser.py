@@ -37,8 +37,8 @@ class Sar2SarDenoiser(Denoiser):
         """
         model = Model(torch.device(self.device),
                       height=patch_size, width=patch_size)
-        model.load_state_dict(torch.load(
-            self.weights_path, map_location=torch.device("cpu"))['model_state_dict'])
+        checkpoint = torch.load(self.weights_path, map_location=torch.device("cpu"), weights_only=False)
+        model.load_state_dict(checkpoint['model_state_dict'])
 
         return model
 
@@ -122,6 +122,9 @@ class Sar2SarDenoiser(Denoiser):
         Returns:
             output_image (numpy array): denoised image
         """
+        if noisy_image.ndim != 2:
+            raise ValueError(f"Unsupported image shape: {noisy_image.shape}")
+
         noisy_image = np.array(noisy_image).reshape(
             1, np.size(noisy_image, 0), np.size(noisy_image, 1), 1).astype(np.float32)
 
